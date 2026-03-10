@@ -11,7 +11,7 @@ build: server client
 build_tests:
 
 server: src/graph.o src/move.o src/player.o src/main.o
-	$(CC) $(CFLAGS) -o install/$@ $^
+	$(CC) $(LDFLAGS) $(CLFAGS) -o install/$@ $^
 
 client:
 
@@ -22,7 +22,7 @@ test: alltests
 install: server client test
 
 %.o: %.c
-	$(CC) $(CLFAGS) -c $< -o $@
+	$(CC) $(LDFLAGS) $(CLFAGS) -c $< -o $@
 
 clean:
 	@rm -f *~ src/*~ test/*~
