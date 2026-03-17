@@ -20,8 +20,6 @@ libclient1.so: src/player.o src/graph.o src/move.o
 libclient2.so: src/player.o src/graph.o src/move.o
 	gcc -shared -o libclient2.so src/player.o src/graph.o src/move.o $(LDFLAGS)
 
-libexample.so: src/example.o
-
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
