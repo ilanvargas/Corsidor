@@ -6,8 +6,8 @@
 int main(int argc, char* argv[]) 
 {
   int m = 6;
-  enum graph_type_t graph_type = TRIANGULAR;
   int M = -1;
+  enum graph_type_t game_graph_type = TRIANGULAR;
   
   // --- Command line options
 
@@ -23,31 +23,7 @@ int main(int argc, char* argv[])
         M = atoi(optarg);
         break;
       case 't':
-
-        switch (optarg[0]) 
-        {
-          case 'P':
-            graph_type = PARALLELOGRAM;
-            break;
-          case 'C':
-            graph_type = CYCLIC;
-            break;
-          case 'H':
-            graph_type = HOLEY;
-            break;
-          case 'L':
-            graph_type = LINEAR;
-            break;
-          case 't':
-            graph_type = TRIANGULAR_RANDOM;
-            break;
-          case 'h':
-            graph_type = HOLEY_RANDOM;
-            break;
-          case 'S':
-            graph_type = SPAN;
-            break;
-        }
+        game_graph_type = graph_type(optarg[0], optarg[1]);
         break;
     }
   }
