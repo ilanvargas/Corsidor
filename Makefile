@@ -1,6 +1,6 @@
 GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
 CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include 
-LDFLAGS = -lm -lgsl -lgslcblas -ldl \
+LDFLAGS = -lm -lgsl -lgslcblas -ldl -lgcov \
 	-L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64
 
 CLIENTS = libclient1.so libclient2.so
