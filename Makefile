@@ -3,7 +3,7 @@ CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 -I$(GSL_PATH)/include
 LDFLAGS = -lm -lgsl -lgslcblas -ldl \
 	-L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64
 
-CLIENTS = libclient1.so libclient2.so libexample.so
+CLIENTS = libclient1.so libclient2.so
 
 all: build
 
