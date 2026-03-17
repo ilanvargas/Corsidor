@@ -10,7 +10,7 @@ all: build
 build: server client
 
 server: src/graph.o src/move.o src/player.o src/main.o
-	$(CC) $(CFLAGS) -o install/$@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 client: $(CLIENTS)
 
@@ -36,13 +36,16 @@ alltests: build_tests
 test: alltests
 
 install: build build_tests
-# 	cp server ./install/
-# 	cp $(CLIENTS) ./install/
-# 	cp test/test_graph ./install/
+	cp server ./install/
+	cp libclient1.so ./install/
+	cp libclient2.so ./install/
+	cp test/test_graph ./install/
+
 
 clean:
 	rm -f src/*.o test/*.o
 	rm -f server libclient1.so libclient2.so test/test_graph
 	rm -f ./install/*
 
+PHONY: all build client build_tests alltests test install clean
 
