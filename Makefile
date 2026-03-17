@@ -1,30 +1,48 @@
 GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
-CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 -I$(GSL_PATH)/include
+CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 -I$(GSL_PATH)/include 
 LDFLAGS = -lm -lgsl -lgslcblas -ldl \
-	-L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
-	-Wl,--rpath=${GSL_PATH}/lib
+	-L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64
 
-all: build build_tests
+CLIENTS = libclient1.so libclient2.so libexample.so
 
-build: server client 
+all: build
 
-build_tests:
+build: server client
 
 server: src/graph.o src/move.o src/player.o src/main.o
-	$(CC) $(LDFLAGS) $(CLFAGS) -o install/$@ $^
+	$(CC) $(CFLAGS) -o install/$@ $^ $(LDFLAGS)
 
-client:
+client: $(CLIENTS)
 
-alltests:
+libclient1.so: src/player.o src/graph.o src/move.o
+	gcc -shared -o libclient1.so src/player.o src/graph.o src/move.o $(LDFLAGS)
+
+libclient2.so: src/player.o src/graph.o src/move.o
+	gcc -shared -o libclient2.so src/player.o src/graph.o src/move.o $(LDFLAGS)
+
+libexample.so: src/example.o
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
+
+build_tests: test/test_graph
+
+test/test_graph: test/test_graph.o src/graph.o src/move.o
+	gcc -o test/test_graph test/test_graph.o src/graph.o src/move.o $(LDFLAGS)
+
+alltests: build_tests
+	./test/test_graph
 
 test: alltests
 
-install: server client test
-
-%.o: %.c
-	$(CC) $(LDFLAGS) $(CLFAGS) -c $< -o $@
+install: build build_tests
+# 	cp server ./install/
+# 	cp $(CLIENTS) ./install/
+# 	cp test/test_graph ./install/
 
 clean:
-	@rm -f *~ src/*~ test/*~
+	rm -f src/*.o test/*.o
+	rm -f server libclient1.so libclient2.so test/test_graph
+	rm -f ./install/*
 
-.PHONY: client install test clean
+
