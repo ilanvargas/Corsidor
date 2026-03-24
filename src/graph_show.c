@@ -20,9 +20,11 @@ void graph_show(struct graph_t* graph, char* file_name)
         }
         fprintf(fptr, "\"%ld\" ", j);
       }
-      if (is_show)
-        fprintf(fptr, "} \n");
     }
+    if (is_show)
+      fprintf(fptr, "} \n");
   }
+
+  fprintf(fptr, "}");
   fclose(fptr);
 }

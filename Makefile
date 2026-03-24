@@ -25,6 +25,7 @@ build_tests: test/test_graph
 test/test_graph: test/test_graph.c src/graph_show.o
 	gcc $(CFLAGS) -I./src $^ -o $@ $(LDFLAGS)
 	./$@
+	dot -Tpdf test1.dot -o test1.pdf
 
 alltests: build_tests
 	./test/test_graph
@@ -45,6 +46,7 @@ clean:
 	rm -f src/*.o test/*.o
 	rm -f server libclient1.so libclient2.so test/test_graph
 	rm -f ./install/*
+	rm -f *.pdf *.dot
 
 PHONY: all build client build_tests alltests test install clean
 
