@@ -9,7 +9,7 @@ all: build
 
 build: server client
 
-server: src/graph.o src/move.o src/player.o src/main.o
+server: src/graph.o src/graph_show src/move.o src/player.o src/main.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 client: $(CLIENTS)

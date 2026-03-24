@@ -1,7 +1,5 @@
 #include <stdio.h>
 
-#include "graph.h"
-
 #define FILE_DOT(file) file_name ".dot"
 
 void graph_show(struct graph_t* graph, char* file_name)
@@ -15,7 +13,7 @@ void graph_show(struct graph_t* graph, char* file_name)
     
     int is_show = 0;
     for (int j = i; j < N; j++) {
-      if (t[i][j] > 0){
+      if (graph->t[i][j] > 0){
         if (!is_show) {
           is_show = 1;
           fprintf(fptr, "\t \"%d\" -- {", i);
@@ -23,6 +21,8 @@ void graph_show(struct graph_t* graph, char* file_name)
         fprintf(fptr, "\"%d\" ", j);
       }
       if (is_show)
-        fprintf(fptr, "\}\n");
+        fprintf(fptr, "}\\n");
+    }
   }
+  fclose(fptr);
 }
