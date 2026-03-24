@@ -23,6 +23,9 @@ enum dir_t {
   WALL_DIR = 7,
 };
 
+/* A mask for handling directions with a wall */
+#define WALL_MASK (((unsigned int)1) << (sizeof(unsigned int) * 8 - 1))
+
 /* A function to determine the opposite direction of a direction `d` */
 static inline enum dir_t opposite_dir(enum dir_t d) {
   return (d == 0) ? 0 : (d >= 4) ? (d - 3) : (d + 3);
