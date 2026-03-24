@@ -35,16 +35,37 @@ if ( game_graph_type == TRIANGULAR ){
 }
 if ( game_graph_type == PARALLELOGRAM ){
   unsigned int num_vertices = m * m;
-  unsigned int num_edges = 3 * num_vertices + 2;
+  unsigned int num_edges = 3 * num_vertices - 4 * m + 1;
   vertex_t position_black = m * (m - 1) / 2 + 1;
   vertex_t position_white = m * (m + 1) / 2;
-  gsl_spmatrix_uint *m = gsl_spmatrix_uint_alloc(num_vertices, num_vertices);
-
+  gsl_spmatrix_uint *matrix = gsl_spmatrix_uint_alloc(num_vertices, num_vertices);
+  for(int i = 0;i < m; i++){
+    for(int j = m*i;j < m*(i + 1); j++){
+      if ((j + 1) % m != 0){
+        gsl_spmatrix_uint_set(matrix,j,j+1,3);
+      }
+      if(j % m != 0){
+        gsl_spmatrix_uint_set(matrix,j+1,j,6);
+      }
+      if (i != m - 1){
+        gsl_spmatrix_uint_set(matrix,j,j+m,5);
+      }
+      if (i != 0){
+        gsl_spmatrix_uint_set(matrix,j+m,j,2);
+      }
+      if (((j+1) % m != 0) && (i != m - 1)){
+        gsl_spmatrix_uint_set(matrix,j,j+m+1,4);
+      }
+      if ((j % m != 0) && (i != 0)){
+        gsl_spmatrix_uint_set(matrix,j+m+1,j,1);
+      }
+    }
+  }
 }
 
 
 gsl_spmatrix_uint *make_graph(){
-  gsl_spmatrix_uint *m = gsl_spmatrix_uint_alloc(num_vertices, num_vertices);
+  gsl_spmatrix_uint *matrix = gsl_spmatrix_uint_alloc(num_vertices, num_vertices);
   
 
 
