@@ -20,18 +20,19 @@ libclient1.so: src/player.o src/graph.o src/move.o
 libclient2.so: src/player.o src/graph.o src/move.o
 	gcc -shared -o libclient2.so src/player.o src/graph.o src/move.o $(LDFLAGS)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
-
 build_tests: test/test_graph
 
-test/test_graph: test/test_graph.o src/graph.o src/move.o
-	gcc -o test/test_graph test/test_graph.o src/graph.o src/move.o $(LDFLAGS)
+test/test_graph: test/test_graph.c src/graph_show.o
+	gcc $(CFLAGS) -I./src $^ -o $@ $(LDFLAGS)
+	./$@
 
 alltests: build_tests
 	./test/test_graph
 
 test: alltests
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
 install: build build_tests
 	cp server ./install/

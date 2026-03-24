@@ -1,27 +1,27 @@
 #include <stdio.h>
 
-#define FILE_DOT(file) file_name ".dot"
+#include "graph_show.h"
 
 void graph_show(struct graph_t* graph, char* file_name)
 {
-  FILE* fptr = fopen(FILE_DOT(file_name), "w");
+  FILE* fptr = fopen(file_name, "w");
 
-  fprintf(fptr, "graph G {\n");
+  fprintf(fptr, "graph G { \n");
 
   size_t N = graph->t->size1;
-  for (int i = 0; i < N; i++) {
+  for (size_t i = 0; i < N; i++) {
     
     int is_show = 0;
-    for (int j = i; j < N; j++) {
-      if (graph->t[i][j] > 0){
+    for (size_t j = i; j < N; j++) {
+      if (gsl_spmatrix_uint_get(graph->t, i, j) > 0){
         if (!is_show) {
           is_show = 1;
-          fprintf(fptr, "\t \"%d\" -- {", i);
+          fprintf(fptr, "\t \"%ld\" -- {", i);
         }
-        fprintf(fptr, "\"%d\" ", j);
+        fprintf(fptr, "\"%ld\" ", j);
       }
       if (is_show)
-        fprintf(fptr, "}\\n");
+        fprintf(fptr, "} \n");
     }
   }
   fclose(fptr);
