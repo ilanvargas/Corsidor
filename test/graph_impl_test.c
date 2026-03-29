@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "graph_show.h"
+#include "graph_impl.h"
 
 gsl_spmatrix_uint* matrix2gsl(size_t n, unsigned int mat[n][n])
 {
