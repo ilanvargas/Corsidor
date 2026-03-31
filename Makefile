@@ -13,12 +13,12 @@ all: build
 build: server client
 
 server: src/graph_impl.o src/main.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ 
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 client: $(CLIENTS)
 
 libclient.so: src/player.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -shared $^ -o $@
+	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 test: build_tests
 	./test_graph_impl
@@ -27,7 +27,7 @@ test: build_tests
 build_tests: $(TESTS)
 
 test_graph_impl: src/graph_impl.o test/graph_impl_test.o
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ 
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
