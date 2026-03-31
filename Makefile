@@ -1,11 +1,11 @@
 GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
 
 CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include -I./src
-LDFLAGS = -lm -lgsl -lgslcblas -ldl \
-	-L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
+LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
+        -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 	-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = libclient.so
+CLIENTS = libclient1.so libclient2.so
 TESTS = test_graph_impl
 
 all: build
@@ -17,7 +17,10 @@ server: src/graph_impl.o src/main.o
 
 client: $(CLIENTS)
 
-libclient.so: src/player.o
+libclient1.so: src/player.o
+	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
+
+libclient2.so: src/player.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 test: build_tests
