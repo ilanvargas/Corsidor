@@ -5,9 +5,9 @@
 #define UNUSED(x) (void)(x)
 
 // --- Initialialiser graph variables ---
-// RETURN: Square matrix size
+// RETURN: Graph side size
 
-size_t f_init_parallelogram(int m, struct graph_t* graph)
+size_t f_init_parallelogram(size_t m, struct graph_t* graph)
 {
   graph->type = PARALLELOGRAM;
 
@@ -26,34 +26,67 @@ size_t f_init_parallelogram(int m, struct graph_t* graph)
   objectives[3] = m*m - 1;
   graph->objectives = objectives;
 
-  return (size_t)m;
+  return m;
+}
+
+size_t f_init_triangular(size_t m, struct graph_t* graph)
+{
+  graph->type = TRIANGULAR;
+
+  size_t n = 2*m - 1;
+
+  graph->num_vertices = 3*m*m - 3*m+1;
+  graph->num_edges = 9*m*m - 15*m + 6;
+  graph->t = gsl_spmatrix_uint_alloc(n*n, n*n);
+
+  graph->start[BLACK] = n*(n/2);
+  graph->start[WHITE] = n*(n/2)+n-1;
+
+  graph->num_objectives = 4;
+  vertex_t* objectives = malloc(4*sizeof(vertex_t));
+  objectives[0] = (m/2)*n + 1;
+  objectives[1] = (m/2)*n + m;
+  objectives[2] = n*(n- m/2) - m - 1;
+  objectives[3] = n*(n- m/2) - 2;
+  graph->objectives = objectives;
+
+  return n;
 }
 
 // --- Conditions for graph construction ---
 
-int f_cond_parallelogram(int m, size_t i, size_t j)
+int f_cond_parallelogram(size_t m, size_t i, size_t j)
 {
   UNUSED(m); UNUSED(i); UNUSED(j);
   return 1;
 }
 
+int f_cond_triangular(size_t m, size_t i, size_t j)
+{
+  return (j < m+i) && (i < m+j);
+}
+
 // --- Graph init function ---
 
-struct graph_t graph_init(int m, enum graph_type_t type)
+struct graph_t graph_init(size_t m, enum graph_type_t type)
 {
   struct graph_t graph;
 
-  size_t (*f_init)(int m, struct graph_t*);
-  int (*f_cond)(int m, size_t i, size_t j);
+  size_t (*f_init)(size_t m, struct graph_t*);
+  int (*f_cond)(size_t m, size_t i, size_t j);
 
   switch (type) {
     case PARALLELOGRAM:
       f_init = f_init_parallelogram;
       f_cond = f_cond_parallelogram;
       break;
+  case TRIANGULAR:
+      f_init = f_init_triangular;
+      f_cond = f_cond_triangular;
+      break;
     default:
-      f_init = f_init_parallelogram;
-      f_cond = f_cond_parallelogram;
+      f_init = f_init_triangular;
+      f_cond = f_cond_triangular;
       break;
   }
 
@@ -68,7 +101,7 @@ struct graph_t graph_init(int m, enum graph_type_t type)
 
         int ii = (int)i + dir_i[d];
         int jj = (int)j + dir_j[d];
-        if (ii >= 0 && ii < (int)n && jj >= 0 && jj < (int)n) {
+        if (ii >= 0 && (size_t)ii < n && jj >= 0 && (size_t)jj < n) {
           gsl_spmatrix_uint_set(graph.t, i*n+j, (size_t)ii*n+(size_t)jj, 
               (f_cond(m, i, j) && f_cond(m, (size_t)ii, (size_t)jj)) ? d : 0);
         }

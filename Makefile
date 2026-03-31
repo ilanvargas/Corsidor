@@ -6,7 +6,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
 	-Wl,--rpath=${GSL_PATH}/lib
 
 CLIENTS = libclient1.so libclient2.so
-TESTS = test_graph_impl
+TESTS =
 
 all: build
 
@@ -23,10 +23,13 @@ libclient1.so: src/player.o
 libclient2.so: src/player.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
-test: build_tests
+dot_test: test_graph_impl
 	./test_graph_impl
 	dot -Tpdf test1.dot -o test1.pdf
 	dot -Tpdf parallelogram_test.dot -o parallelogram_test.pdf
+	dot -Tpdf triangular_test.dot -o triangular_test.pdf
+
+test: build_tests
 
 build_tests: $(TESTS)
 
@@ -41,7 +44,7 @@ install: build build_tests
 
 clean:
 	rm -f src/*.o src/*.gcno test/*.o test/*.gcno test/*.gcda
-	rm -f server $(CLIENTS) $(TESTS)
+	rm -f server $(CLIENTS) $(TESTS) test_graph_impl
 	rm -f ./install/*
 	rm -f *.pdf *.dot
 
