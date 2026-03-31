@@ -57,16 +57,18 @@ struct graph_t graph_init(int m, enum graph_type_t type)
   f_init(m, &graph);
   size_t n = graph.t->size1;
 
-  size_t dir_i[] = {1, 1, 0, -1, -1, 0};
-  size_t dir_j[] = {-1, 0, 1, 1, 0, -1};
+  int dir_i[] = {1, 1, 0, -1, -1, 0};
+  int dir_j[] = {-1, 0, 1, 1, 0, -1};
 
   for (size_t i = 0; i < n; i++) {
     for (size_t j = 0; j < n; j++) {
-
       for (enum dir_t d = FIRST_DIR; d < LAST_DIR; d++) {
-        if (i+dir_i[d] < n && j+dir_j[d] < n && f_cond(m, dir_i[d], dir_j[d]))
-          gsl_spmatrix_uint_set(graph.t, i*n+j, (i+dir_i[d])*n+j+dir_j[d], 
-              (f_cond(m, i, j) && f_cond(m, i+dir_i[d], j+dir_j[d])) ? d : 0);
+
+        int ii = (int)i + dir_i[d];
+        int jj = (int)j + dir_j[d];
+        if (ii >= 0 && ii < (int)n && jj >= 0 && jj < (int)n)
+          gsl_spmatrix_uint_set(graph.t, i*n+j, (size_t)ii*n+(size_t)jj, 
+              (f_cond(m, i, j) && f_cond(m, (size_t)ii, (size_t)jj)) ? d : 0);
       }
     }
   }
