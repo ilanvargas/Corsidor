@@ -15,8 +15,8 @@ size_t f_init_parallelogram(int m, struct graph_t* graph)
   graph->num_edges = 3*graph->num_vertices - 4*m + 1;
   graph->t = gsl_spmatrix_uint_alloc(graph->num_vertices, graph->num_vertices);
 
-  graph->start[BLACK] = m * (m - 1) / 2 + 1;
-  graph->start[WHITE] = m * (m + 1) / 2;
+  graph->start[BLACK] = m*(m/2);
+  graph->start[WHITE] = m*(m/2)+m-1;
 
   graph->num_objectives = 4;
   vertex_t* objectives = malloc(4*sizeof(vertex_t));
@@ -68,9 +68,7 @@ struct graph_t graph_init(int m, enum graph_type_t type)
 
         int ii = (int)i + dir_i[d];
         int jj = (int)j + dir_j[d];
-        printf("d %d,i %ld %ld,ii %d %d,m %ld %ld \n", d, i, j, ii, jj, i*n+j, (size_t)ii*n+(size_t)jj);
         if (ii >= 0 && ii < (int)n && jj >= 0 && jj < (int)n) {
-          printf("yes\n");
           gsl_spmatrix_uint_set(graph.t, i*n+j, (size_t)ii*n+(size_t)jj, 
               (f_cond(m, i, j) && f_cond(m, (size_t)ii, (size_t)jj)) ? d : 0);
         }
@@ -85,7 +83,7 @@ struct graph_t graph_init(int m, enum graph_type_t type)
 
 void graph_show_style(struct graph_t* graph, FILE* fptr)
 {
-  fprintf(fptr, "\t node [shape=circle, style=filled, width=0.2, label=\"\"]; \n");
+  fprintf(fptr, "\t node [shape=circle, style=filled,fixedsize=true, width=0.5]; \n");
 
   fprintf(fptr, "\t %d [fillcolor=white]; \n", graph->start[WHITE]);
   fprintf(fptr, "\t %d [fillcolor=black]; \n", graph->start[BLACK]);

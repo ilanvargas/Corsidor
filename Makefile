@@ -26,6 +26,7 @@ libclient2.so: src/player.o
 test: build_tests
 	./test_graph_impl
 	dot -Tpdf test1.dot -o test1.pdf
+	dot -Tpdf parallelogram_test.dot -o parallelogram_test.pdf
 
 build_tests: $(TESTS)
 
@@ -39,7 +40,7 @@ install: build build_tests
 	cp server $(CLIENTS) $(TESTS) ./install/
 
 clean:
-	rm -f src/*.o src/*.gcno test/*.o test/*.gcno
+	rm -f src/*.o src/*.gcno test/*.o test/*.gcno test/*.gcda
 	rm -f server $(CLIENTS) $(TESTS)
 	rm -f ./install/*
 	rm -f *.pdf *.dot
