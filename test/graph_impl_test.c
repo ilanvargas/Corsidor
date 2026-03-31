@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "graph_show.h"
+#include "graph_impl.h"
+#include "test.h"
 
 gsl_spmatrix_uint* matrix2gsl(size_t n, unsigned int mat[n][n])
 {
@@ -18,8 +19,6 @@ gsl_spmatrix_uint* matrix2gsl(size_t n, unsigned int mat[n][n])
 
 void test_graph_show()
 {
-  printf("%s\n", __func__);
-
   vertex_t mat[4][4] = {
     {0, 3, 4, 0},
     {6, 0, 0, 4},
@@ -37,12 +36,26 @@ void test_graph_show()
   };
 
   graph_show(&g, "test1.dot");
-  printf("File created as test1.dot\n");
+  fprintf(stderr, "File created as test1.dot\n");
+
+  COMPLETE
+}
+
+void test_graph_init()
+{
+  printf("Test for parrallelogram\n");
+
+  struct graph_t g_parallelogram = graph_init(9, PARALLELOGRAM);
+  graph_show(&g_parallelogram, "parallelogram_test.dot\n");
+  fprintf(stderr, "File created as parallelogram_test.dot\n");
+
+  COMPLETE
 }
 
 int main()
 {
-  test_graph_show();
+  RUN(test_graph_show())
+  RUN(test_graph_init())
   
   return EXIT_SUCCESS;
 }

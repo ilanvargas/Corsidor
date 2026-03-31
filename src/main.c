@@ -5,14 +5,16 @@
 
 int main(int argc, char* argv[]) 
 {
+  // --- Game variable ---
+
   int m = 6;
   int M = -1;
-  enum graph_type_t game_graph_type = TRIANGULAR;
+  enum graph_type_t type = TRIANGULAR;
   
-  // --- Command line options
+  // --- Command line options ---
 
   int opt;
-  while ((opt = getopt(argc, argv, "s:t:n:q:igb")) != -1)
+  while ((opt = getopt(argc, argv, "m:M:t:")) != -1)
   {
     switch (opt)
     {
@@ -23,7 +25,7 @@ int main(int argc, char* argv[])
         M = atoi(optarg);
         break;
       case 't':
-        game_graph_type = graph_type(optarg[0], optarg[1]);
+        type = graph_type(optarg[0], optarg[1]);
         break;
     }
   }

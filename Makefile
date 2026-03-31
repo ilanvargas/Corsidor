@@ -1,52 +1,43 @@
 GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
-CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include 
-LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
-	-L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64
 
-CLIENTS = libclient1.so libclient2.so
+CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include -I./src
+LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64
+
+CLIENTS = libclient.so
+TESTS = test_graph_impl
 
 all: build
 
 build: server client
 
-server: src/graph.o src/graph_show src/move.o src/player.o src/main.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+server: src/graph_impl.o src/main.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ 
 
 client: $(CLIENTS)
 
-libclient1.so: src/player.o src/graph.o src/move.o
-	gcc -shared -o libclient1.so src/player.o src/graph.o src/move.o $(LDFLAGS)
+libclient.so: src/player.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -shared $^ -o $@
 
-libclient2.so: src/player.o src/graph.o src/move.o
-	gcc -shared -o libclient2.so src/player.o src/graph.o src/move.o $(LDFLAGS)
-
-build_tests: test/test_graph
-
-test/test_graph: test/test_graph.c src/graph_show.o
-	gcc $(CFLAGS) -I./src $^ -o $@ $(LDFLAGS)
-	./$@
+test: build_tests
+	./test_graph_impl
 	dot -Tpdf test1.dot -o test1.pdf
 
-alltests: build_tests
-	./test/test_graph
+build_tests: $(TESTS)
 
-test: alltests
+test_graph_impl: src/graph_impl.o test/graph_impl_test.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@ 
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
 install: build build_tests
-	cp server ./install/
-	cp libclient1.so ./install/
-	cp libclient2.so ./install/
-	cp test/test_graph ./install/
-
+	cp server $(CLIENTS) $(TESTS) ./install/
 
 clean:
-	rm -f src/*.o test/*.o
-	rm -f server libclient1.so libclient2.so test/test_graph
+	rm -f src/*.o src/*.gcno test/*.o test/*.gcno
+	rm -f server $(CLIENTS) $(TESTS)
 	rm -f ./install/*
 	rm -f *.pdf *.dot
 
-PHONY: all build client build_tests alltests test install clean
+.PHONY: all build client build_tests test install clean
 
