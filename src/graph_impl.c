@@ -5,8 +5,9 @@
 #define UNUSED(x) (void)(x)
 
 // --- Initialialiser graph variables ---
+// RETURN: Square matrix size
 
-void f_init_parallelogram(int m, struct graph_t* graph)
+size_t f_init_parallelogram(int m, struct graph_t* graph)
 {
   graph->type = PARALLELOGRAM;
 
@@ -24,6 +25,8 @@ void f_init_parallelogram(int m, struct graph_t* graph)
   objectives[2] = m*(m - 1);
   objectives[3] = m*m - 1;
   graph->objectives = objectives;
+
+  return (size_t)m;
 }
 
 // --- Conditions for graph construction ---
@@ -40,7 +43,7 @@ struct graph_t graph_init(int m, enum graph_type_t type)
 {
   struct graph_t graph;
 
-  void (*f_init)(int m, struct graph_t*);
+  size_t (*f_init)(int m, struct graph_t*);
   int (*f_cond)(int m, size_t i, size_t j);
 
   switch (type) {
@@ -54,8 +57,7 @@ struct graph_t graph_init(int m, enum graph_type_t type)
       break;
   }
 
-  f_init(m, &graph);
-  size_t n = graph.t->size1;
+  size_t n = f_init(m, &graph);
 
   int dir_i[] = {1, 1, 0, -1, -1, 0};
   int dir_j[] = {-1, 0, 1, 1, 0, -1};
@@ -66,9 +68,12 @@ struct graph_t graph_init(int m, enum graph_type_t type)
 
         int ii = (int)i + dir_i[d];
         int jj = (int)j + dir_j[d];
-        if (ii >= 0 && ii < (int)n && jj >= 0 && jj < (int)n)
+        printf("d %d,i %ld %ld,ii %d %d,m %ld %ld \n", d, i, j, ii, jj, i*n+j, (size_t)ii*n+(size_t)jj);
+        if (ii >= 0 && ii < (int)n && jj >= 0 && jj < (int)n) {
+          printf("yes\n");
           gsl_spmatrix_uint_set(graph.t, i*n+j, (size_t)ii*n+(size_t)jj, 
               (f_cond(m, i, j) && f_cond(m, (size_t)ii, (size_t)jj)) ? d : 0);
+        }
       }
     }
   }

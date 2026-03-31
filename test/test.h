@@ -5,6 +5,6 @@
 
 #define PASSED printf("\e[32mPASSED\e[0m\n");
 
-#define COMPLETE printf("\e[34mTEST COMPLETE\e[0m\n");
+#define COMPLETE printf("\e[32mTEST COMPLETE\e[0m\n");
 
 #endif // __TEST_H__

@@ -46,7 +46,7 @@ void test_graph_init()
   printf("Test for parrallelogram\n");
 
   struct graph_t g_parallelogram = graph_init(9, PARALLELOGRAM);
-  graph_show(&g_parallelogram, "parallelogram_test.dot\n");
+  //graph_show(&g_parallelogram, "parallelogram_test.dot\n");
   fprintf(stderr, "File created as parallelogram_test.dot\n");
 
   COMPLETE
