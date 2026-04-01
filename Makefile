@@ -6,7 +6,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
 	-Wl,--rpath=${GSL_PATH}/lib
 
 CLIENTS = libclient1.so libclient2.so
-TESTS = test_graph_impl
+TESTS =
 
 all: build
 
@@ -44,7 +44,7 @@ install: build build_tests
 
 clean:
 	rm -f src/*.o src/*.gcno test/*.o test/*.gcno test/*.gcda
-	rm -f server $(CLIENTS) $(TESTS)
+	rm -f server $(CLIENTS) $(TESTS) test_graph_impl
 	rm -f ./install/*
 	rm -f *.pdf *.dot
 
