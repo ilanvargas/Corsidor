@@ -4,10 +4,9 @@
 #include "graph_impl.h"
 #include "test.h"
 
-gsl_spmatrix_uint* matrix2gsl(size_t n, unsigned int mat[n][n])
-{
+gsl_spmatrix_uint* matrix2gsl(size_t n, unsigned int mat[n][n]) {
   gsl_spmatrix_uint* t = gsl_spmatrix_uint_alloc(n, n);
-  
+
   for (size_t i = 0; i < n; i++) {
     for (size_t j = 0; j < n; j++) {
       gsl_spmatrix_uint_set(t, i, j, mat[i][j]);
@@ -17,23 +16,15 @@ gsl_spmatrix_uint* matrix2gsl(size_t n, unsigned int mat[n][n])
   return t;
 }
 
-void test_graph_show()
-{
-  vertex_t mat[4][4] = {
-    {0, 3, 4, 0},
-    {6, 0, 0, 4},
-    {1, 0, 0, 3},
-    {0, 1, 6, 0}
-  };
+void test_graph_show() {
+  vertex_t mat[4][4] = {{0, 3, 4, 0}, {6, 0, 0, 4}, {1, 0, 0, 3}, {0, 1, 6, 0}};
   vertex_t obj[] = {2};
-  struct graph_t g = {
-    .num_vertices = 4,
-    .num_edges = 4,
-    .t = matrix2gsl(4, mat),
-    .start = {0, 1},
-    .num_objectives = 1,
-    .objectives = obj
-  };
+  struct graph_t g = {.num_vertices = 4,
+                      .num_edges = 4,
+                      .t = matrix2gsl(4, mat),
+                      .start = {0, 1},
+                      .num_objectives = 1,
+                      .objectives = obj};
 
   graph_show(&g, "test1.dot");
   fprintf(stderr, "File created as test1.dot\n");
@@ -41,14 +32,13 @@ void test_graph_show()
   COMPLETE
 }
 
-void test_graph_init()
-{
+void test_graph_init() {
   printf("Test for parrallelogram graph\n");
 
   struct graph_t g_parallelogram = graph_init(9, PARALLELOGRAM);
   graph_show(&g_parallelogram, "parallelogram_test.dot");
   fprintf(stderr, "File created as parallelogram_test.dot\n");
-  
+
   printf("Test for triangular graph\n");
 
   struct graph_t g_triangular = graph_init(5, TRIANGULAR);
@@ -58,10 +48,9 @@ void test_graph_init()
   COMPLETE
 }
 
-int main()
-{
+int main() {
   RUN(test_graph_show())
   RUN(test_graph_init())
-  
+
   return EXIT_SUCCESS;
 }

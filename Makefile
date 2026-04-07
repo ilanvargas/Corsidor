@@ -43,7 +43,7 @@ install: build build_tests
 	cp server $(CLIENTS) $(TESTS) ./install/
 
 clean:
-	rm -f src/*.o src/*.gcno test/*.o test/*.gcno test/*.gcda
+	rm -f src/*.o src/*.gcno src/*gcda test/*.o test/*.gcno test/*.gcda
 	rm -f server $(CLIENTS) $(TESTS) test_graph_impl
 	rm -f ./install/*
 	rm -f *.pdf *.dot

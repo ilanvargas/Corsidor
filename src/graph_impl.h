@@ -17,4 +17,4 @@ struct graph_t graph_init(size_t m, enum graph_type_t type);
  */
 void graph_show(struct graph_t* graph, char* file_name);
 
-#endif // __GRAPH_IMPL_H__
+#endif  // __GRAPH_IMPL_H__
