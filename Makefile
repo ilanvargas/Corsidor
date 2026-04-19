@@ -6,7 +6,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
 	-Wl,--rpath=${GSL_PATH}/lib
 
 CLIENTS = libclient1.so libclient2.so
-TESTS =
+TESTS = 
 
 all: build
 
@@ -17,10 +17,10 @@ server: src/graph_impl.o src/main.o
 
 client: $(CLIENTS)
 
-libclient1.so: src/player.o
+libclient1.so: src/player_GOAT.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
-libclient2.so: src/player.o
+libclient2.so: src/player_Chickenleg.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 dot_test: test_graph_impl
