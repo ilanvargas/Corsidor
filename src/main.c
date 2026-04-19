@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "graph.h"
+#include "graph_impl.h"
 #include "move.h"
 #include "move_valid.h"
 #include "player.h"
@@ -130,7 +132,7 @@ int main(int argc, char* argv[])
     }
 
     // Mark visited objectives (check all objectives)
-    for (int i = 0; i < graph->num_objectives; i++) {
+    for (unsigned int i = 0; i < graph->num_objectives; i++) {
       if (positions[current_player] == graph->objectives[i]) {
         if (current_player == 0) {
           visited1[i] = 1;
@@ -147,7 +149,7 @@ int main(int argc, char* argv[])
     // Player wins by visiting all objectives and returning to start
     int *visited = (current_player == 0) ? visited1 : visited2;
     int all_objectives_visited = 1;
-    for (int i = 0; i < graph->num_objectives; i++) {
+    for (unsigned int i = 0; i < graph->num_objectives; i++) {
       if (!visited[i]) {
         all_objectives_visited = 0;
         break;
