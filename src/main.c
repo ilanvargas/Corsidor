@@ -1,28 +1,23 @@
 #include <getopt.h>
 #include <stdlib.h>
-<<<<<<< HEAD
-#include <stdbool.h>
-#include "graph.h"
-#include "graph_impl.h"
-#include "move.h"
-#include "player.h"
-=======
 #include <dlfcn.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "graph.h"
 #include "graph_impl.h"
 #include "move.h"
-#include "move_valid.h"
 #include "player.h"
+#include <dlfcn.h>
+#include <stdio.h>
+#include <string.h>
 
 // Function pointers for dynamic loading
 typedef char const* (*get_player_name_t)();
 typedef void (*initialize_t)(unsigned int, struct graph_t*);
 typedef struct move_t (*play_t)(const struct move_t[]);
 typedef void (*finalize_t)();
->>>>>>> refs/remotes/origin/master
 
 typedef struct ServerPlayer {
     void* handle;
@@ -75,75 +70,32 @@ int main(int argc, char* argv[]) {
         type = graph_type(optarg[0], optarg[1]);
         break;
     }
-    ServerPlayer players[NUM_PLAYERS];
-    players[0] = load_player("./libclient1.so");
-    players[1] = load_player("./libclient2.so");
-
-    //random_or_config() is a fonction determine which player will start first randomly 
-    unsigned int current_player_id = random_or_config(); 
-    struct graph_t graph = graph_init(m, type);
-    struct move_t previous_moves[NUM_PLAYERS] = {{.t = NO_TYPE}, {.t = NO_TYPE}};
-    enum player_color_t players_color[NUM_PLAYERS];
-    for (int i = 0; i < NUM_PLAYERS; i++) {
-      players_color[i] = (i == current_player_id) ? BLACK : WHITE;
-      players[i].initialize(i, &graph);
-      printf("The player %d (%s) join the party", i, players[i].get_player_name());
-    }
-    bool game_over = false;
-    while (!game_over) {
-      printf("--- Tour du joueur %d ---\n", current_p);
-      struct move_t move = players[current_p].play(previous_moves);
-      
-
-
-
-
-    }
-
   }
+  ServerPlayer players[NUM_PLAYERS];
+  players[0] = load_player("./libclient1.so");
+  players[1] = load_player("./libclient2.so");
 
+  //random_or_config() is a fonction determine which player will start first randomly 
+  unsigned int current_player_id = random_or_config(); 
   // Initialize graph
   struct graph_t *graph = malloc(sizeof(struct graph_t));
   *graph = graph_init(m, type);
-
   // Player positions
-  vertex_t positions[2] = {graph->start[0], graph->start[1]};
-
+  vertex_t positions[NUM_PLAYERS] = {graph->start[0], graph->start[1]};
   // Visited objectives
   int visited1[graph->num_objectives];
   int visited2[graph->num_objectives];
   memset(visited1, 0, sizeof(visited1));
   memset(visited2, 0, sizeof(visited2));
 
-  // Load clients
-  void *handle1 = dlopen("./libclient1.so", RTLD_LAZY);
-  void *handle2 = dlopen("./libclient2.so", RTLD_LAZY);
-  if (!handle1 || !handle2) {
-    fprintf(stderr, "Error loading clients\n");
-    return EXIT_FAILURE;
+  struct move_t previous_moves[NUM_PLAYERS] = {{.t = NO_TYPE}, {.t = NO_TYPE}};
+  enum player_color_t players_color[NUM_PLAYERS];
+  for (int i = 0; i < NUM_PLAYERS; i++) {
+    players_color[i] = (i == current_player_id) ? BLACK : WHITE;
+    players[i].initialize(i, graph);
+    printf("The player %d (%s) join the party", i, players[i].get_player_name());
   }
 
-  // Get function pointers
-  get_player_name_t get_name1 = dlsym(handle1, "get_player_name");
-  initialize_t init1 = dlsym(handle1, "initialize");
-  play_t play1 = dlsym(handle1, "play");
-  finalize_t fin1 = dlsym(handle1, "finalize");
-
-  get_player_name_t get_name2 = dlsym(handle2, "get_player_name");
-  initialize_t init2 = dlsym(handle2, "initialize");
-  play_t play2 = dlsym(handle2, "play");
-  finalize_t fin2 = dlsym(handle2, "finalize");
-
-  // Initialize players
-  init1(0, graph);
-  init2(1, graph);
-
-  printf("Player 1: %s\n", get_name1());
-  printf("Player 2: %s\n", get_name2());
-
-  // Game loop
-  struct move_t previous_moves[2] = {{.t = NO_TYPE}, {.t = NO_TYPE}};
-  int current_player = 0;
   int winner = -1;
 
   while (winner == -1) {
@@ -232,6 +184,6 @@ int main(int argc, char* argv[]) {
   free(graph->objectives);
   gsl_spmatrix_uint_free(graph->t);
   free(graph);
-
+  
   return EXIT_SUCCESS;
 }
