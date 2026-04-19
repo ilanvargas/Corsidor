@@ -100,7 +100,7 @@ unsigned int distance(vertex_t current_pos, enum dir_t dir, vertex_t target_pos,
   return dist;
 }
 
-int wall_on_path(vertex_t start, dir_t dir, vertex_t end, graph_t *graph) {
+int wall_on_path(vertex_t start, enum dir_t dir, vertex_t end, struct graph_t *graph) {
   vertex_t temp = start;
   while (temp != end) {
     int found = 0;
@@ -122,17 +122,19 @@ int move_is_valid(struct graph_t *graph, struct move_t move, struct move_t *prev
 
   vertex_t current_pos = positions[move.c];
   vertex_t opponent_pos = positions[1 - move.c];
+  vertex_t previous_pos = current_pos; // NEED TO TRACK PREVIOUS POSITION FOR 60 DEGREE CHECK
 
   unsigned int max_dist_straight = 3;
-  unsigned int max_dist_60° = 2;
+  unsigned int max_dist_60 = 2;
 
 
   if (move.t == MOVE) {
+    enum dir_t move_dir = get_direction(current_pos, move.m, graph);
     if (!is_valid_position(move.m, graph)) return 0;
     if (move.m == opponent_pos || move.m == current_pos) return 0;
-    int dist = distance(current_pos, get_direction(current_pos, move.m, graph), move.m, graph);
-    if (is_straight_path(current_pos, move.m, graph, &move_dir, &dist) && dist <= max_dist_straight) return 1;
-    if (dirs_are_60_degrees_apart(previous_moves[move.c].d, get_direction(current_pos, move.m, graph)) && dist <= max_dist_60°) return 1;
+    unsigned int dist = distance(current_pos, get_direction(current_pos, move.m, graph), move.m, graph);
+    if (is_straight_path(current_pos, move.m, graph, move_dir, dist) && dist <= max_dist_straight) return 1;
+    if (dirs_are_60_degrees_apart(get_direction(previous_pos, current_pos, graph), get_direction(current_pos, move.m, graph)) && dist <= max_dist_60) return 1;
     if (is_adjacent(current_pos, move.m, graph)) return 1;
     return 0;
 
@@ -262,13 +264,13 @@ struct move_t waterloo_move(struct move_t move, struct graph_t *graph, vertex_t 
     // For WALL: Check which edge of the wall doesn't exist in the graph
     if (!edge_exists(move.e[0].fr, move.e[0].to, graph)) {
       // First edge doesn't exist - that's the blocking one
-      return (struct move_t){.c = move.c, .t = WATERLOO, .m = INVALID_VERTEX, .e = {move.e[0], INVALID_EDGE}};
+      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {move.e[0], INVALID_EDGE}};
     } else if (!edge_exists(move.e[1].fr, move.e[1].to, graph)) {
       // Second edge doesn't exist - that's the blocking one
-      return (struct move_t){.c = move.c, .t = WATERLOO, .m = INVALID_VERTEX, .e = {move.e[1], INVALID_EDGE}};
+      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {move.e[1], INVALID_EDGE}};
     } else {
       // Both edges exist, but wall is invalid because it stops opponent from reaching objectives.
-      return (struct move_t){.c = move.c, .t = WATERLOO, .m = INVALID_VERTEX, .e = {INVALID_EDGE, INVALID_EDGE}};
+      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {INVALID_EDGE, INVALID_EDGE}};
     }
   }
 
