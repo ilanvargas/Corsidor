@@ -241,7 +241,7 @@ struct move_t waterloo_move(struct move_t move, struct graph_t *graph, vertex_t 
       if (!found) {
         // Create WATERLOO move with the blocking edge (last -> temp)
         struct edge_t blocking = {last, temp};
-        return (struct move_t){.c = move.c, .t = WATERLOO, .m = last, .e = {blocking, INVALID_EDGE}};
+        return (struct move_t){.c = move.c, .t = WATERLOO, .m = last, .e = {blocking, {0, 0}}};
       }
     }
 
@@ -253,24 +253,24 @@ struct move_t waterloo_move(struct move_t move, struct graph_t *graph, vertex_t 
     // (since jump requires adjacency to opponent)
     if (!edge_exists(current_pos, positions[1 - move.c], graph)) {
       struct edge_t blocking = {current_pos, positions[1 - move.c]};
-      return (struct move_t){.c = move.c, .t = WATERLOO, .m = current_pos, .e = {blocking, INVALID_EDGE}};
+      return (struct move_t){.c = move.c, .t = WATERLOO, .m = current_pos, .e = {blocking, {0, 0}}};
     }
     if (!edge_exists(positions[1 - move.c], move.m, graph)) {
       struct edge_t blocking = {positions[1 - move.c], move.m};
-      return (struct move_t){.c = move.c, .t = WATERLOO, .m = current_pos, .e = {blocking, INVALID_EDGE}};
+      return (struct move_t){.c = move.c, .t = WATERLOO, .m = current_pos, .e = {blocking, {0, 0}}};
     }
 
   } else if (move.t == WALL) {
     // For WALL: Check which edge of the wall doesn't exist in the graph
     if (!edge_exists(move.e[0].fr, move.e[0].to, graph)) {
       // First edge doesn't exist - that's the blocking one
-      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {move.e[0], INVALID_EDGE}};
+      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {move.e[0], {0, 0}}};
     } else if (!edge_exists(move.e[1].fr, move.e[1].to, graph)) {
       // Second edge doesn't exist - that's the blocking one
-      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {move.e[1], INVALID_EDGE}};
+      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {move.e[1], {0, 0}}};
     } else {
       // Both edges exist, but wall is invalid because it stops opponent from reaching objectives.
-      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {INVALID_EDGE, INVALID_EDGE}};
+      return (struct move_t){.c = move.c, .t = WATERLOO, .m = -1, .e = {{0, 0}, {0, 0}}};
     }
   }
 
