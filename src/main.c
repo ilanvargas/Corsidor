@@ -9,9 +9,7 @@
 #include "graph_impl.h"
 #include "move.h"
 #include "player.h"
-#include <dlfcn.h>
-#include <stdio.h>
-#include <string.h>
+#include "move_valid.h"
 
 // Function pointers for dynamic loading
 typedef char const* (*get_player_name_t)();
@@ -27,8 +25,8 @@ typedef struct ServerPlayer {
     void (*finalize)(void);
 };
 
-ServerPlayer load_player(const char* library_path) {
-    ServerPlayer sp;
+struct ServerPlayer load_player(const char* library_path) {
+    struct ServerPlayer sp;
     sp.handle = dlopen(library_path, RTLD_LAZY);
     if (!sp.handle) {
         fprintf(stderr, "Erreur de chargement de %s: %s\n", library_path, dlerror());
@@ -71,12 +69,12 @@ int main(int argc, char* argv[]) {
         break;
     }
   }
-  ServerPlayer players[NUM_PLAYERS];
+  struct ServerPlayer players[NUM_PLAYERS];
   players[0] = load_player("./libclient1.so");
   players[1] = load_player("./libclient2.so");
 
   //random_or_config() is a fonction determine which player will start first randomly 
-  unsigned int current_player_id = random_or_config(); 
+  unsigned int current_player = random_or_config(); 
   // Initialize graph
   struct graph_t *graph = malloc(sizeof(struct graph_t));
   *graph = graph_init(m, type);
@@ -90,8 +88,8 @@ int main(int argc, char* argv[]) {
 
   struct move_t previous_moves[NUM_PLAYERS] = {{.t = NO_TYPE}, {.t = NO_TYPE}};
   enum player_color_t players_color[NUM_PLAYERS];
-  for (int i = 0; i < NUM_PLAYERS; i++) {
-    players_color[i] = (i == current_player_id) ? BLACK : WHITE;
+  for (unsigned int i = 0; i < NUM_PLAYERS; i++) {
+    players_color[i] = (i == current_player) ? BLACK : WHITE;
     players[i].initialize(i, graph);
     printf("The player %d (%s) join the party", i, players[i].get_player_name());
   }
@@ -101,9 +99,9 @@ int main(int argc, char* argv[]) {
   while (winner == -1) {
     struct move_t move;
     if (current_player == 0) {
-      move = play1(previous_moves);
+      move = players[0].play(previous_moves);
     } else {
-      move = play2(previous_moves);
+      move = players[1].play(previous_moves);
     }
 
     // Validate move and check for Waterloo
@@ -174,11 +172,10 @@ int main(int argc, char* argv[]) {
   }
 
   // Finalize
-  fin1();
-  fin2();
-
-  dlclose(handle1);
-  dlclose(handle2);
+  for (int i = 0; i < NUM_PLAYERS; i++) {
+    players[i].finalize();
+    dlclose(players[i].handle);
+  }
 
   // Free graph
   free(graph->objectives);
