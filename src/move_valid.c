@@ -145,8 +145,8 @@ int wall_on_path(vertex_t start,
 
 int move_is_valid(struct graph_t* graph,
                   struct move_t move,
-                  struct move_t* previous_moves,
-                  vertex_t positions[2]) {
+                  vertex_t positions[2],
+                  vertex_t prev_positions[2]) {
   if (move.c >= NUM_PLAYERS)
     return 0;
   if (move.t == NO_TYPE)
@@ -156,37 +156,29 @@ int move_is_valid(struct graph_t* graph,
   vertex_t opponent_pos = positions[1 - move.c];
   
   if (move.t == MOVE) {
+    if (!is_valid_position(move.m, graph))
+      return 0;
+    if (move.m == opponent_pos || move.m == current_pos)
+      return 0;
+    
     enum dir_t move_dir = get_direction(current_pos, move.m, graph);
-    if (!is_valid_position(move.m, graph)) {
-      return 0;
-    }
-    if (move.m == opponent_pos || move.m == current_pos){
-      printf("opp position = %u\n",opponent_pos);
-      printf("us position = %u\n",current_pos);
-      printf("dep position = %u\n",move.m);
-      printf("hhhhhhhhhhhhhhhhhhhhhhh\n");
-      return 0;
-    }
-
     unsigned int dist = distance(
         current_pos, get_direction(current_pos, move.m, graph), move.m, graph);
     
     if (is_straight_path(current_pos, move.m, graph, move_dir, dist) &&
-        dist <= max_dist_straight){
+        dist <= MAX_DIST_STRAIGHT_MOVE)
       return 1;
-    }
-    if (dirs_are_60_degrees_apart(
+    else if (dirs_are_60_degrees_apart(
             get_direction(previous_pos, current_pos, graph),
             get_direction(current_pos, move.m, graph)) &&
-        dist <= max_dist_60){
+        dist <= MAX_DIST_60_MOVE)
       return 1;
-    }
-    if (is_adjacent(current_pos, move.m, graph)){
+    else if (is_adjacent(current_pos, move.m, graph))
       return 1;
-    }
-    return 0;
-
-  } else if (move.t == JUMP) {
+    else
+      return 0;
+  }
+  else if (move.t == JUMP) {
     if (!is_valid_position(move.m, graph))
       return 0;
     if (move.m == current_pos || move.m == opponent_pos)

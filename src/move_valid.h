@@ -3,8 +3,8 @@
 /** Checks if the move is valide */
 int move_is_valid(struct graph_t* graph,
                   struct move_t move,
-                  struct move_t* previous_moves,
-                  vertex_t positions[2]);
+                  vertex_t positions[2],
+                  vertex_t prev_positions[2]);
 
 /** Checks if the move  waterloo */
 int move_is_waterloo(struct graph_t* graph,
