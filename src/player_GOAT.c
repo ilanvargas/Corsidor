@@ -1,4 +1,5 @@
 #include "player.h"
+#include "move_valid.h"
 
 char const* p_name = "GOAT";
 unsigned int p_id;
@@ -34,15 +35,18 @@ struct move_t move_jump(const struct move_t previous_moves[NUM_PLAYERS]){
 }
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
+  vertex_t positions[2];
+  positions[0] = previous_moves[0].m;
+  positions[1] = previous_moves[1].m;
   if (previous_moves[p_id].t == NO_TYPE){
     return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos + 1};
   }
   struct move_t move = move_est(previous_moves);
-  if (move_is_valid(&p_graph, move, previous_moves, &p_pos)){
+  if (move_is_valid(&p_graph, move, previous_moves, positions)){
     return move;
   } else {
     move = move_west(previous_moves);
-    if (move_is_valid(&p_graph, move, previous_moves, &p_pos)){
+    if (move_is_valid(&p_graph, move, previous_moves, positions)){
       return move;
     } else {
       return move_jump(previous_moves);
