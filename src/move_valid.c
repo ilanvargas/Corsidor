@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#def MAX_DIST_STRAIGHT_MOVE 3
+#def MAX_DIST_60_MOVE 2
+
 // checks if two directions are consecutive
 int are_consecutive_dirs(enum dir_t d1, enum dir_t d2) {
   if (d1 == NO_EDGE || d2 == NO_EDGE)
@@ -18,7 +21,8 @@ enum dir_t get_direction(vertex_t fr, vertex_t to, struct graph_t* graph) {
   return (enum dir_t)val;
 }
 
-// check if position is valid
+/** Checks if position inside graph */
+// TODO(ivargas): complete for other graph types
 int is_valid_position(vertex_t pos, struct graph_t* graph) {
   return pos < graph->num_vertices;
 }
@@ -143,50 +147,51 @@ int move_is_valid(struct graph_t* graph,
                   struct move_t move,
                   struct move_t* previous_moves,
                   vertex_t positions[2]) {
-  if (move.c != BLACK && move.c != WHITE)
+  if (move.c >= NUM_PLAYERS)
     return 0;
   if (move.t == NO_TYPE)
     return 0;
 
   vertex_t current_pos = positions[move.c];
   vertex_t opponent_pos = positions[1 - move.c];
-  vertex_t previous_pos =
-      current_pos;  // NEED TO TRACK PREVIOUS POSITION FOR 60 DEGREE CHECK
-
-  unsigned int max_dist_straight = 3;
-  unsigned int max_dist_60 = 2;
-
+  
   if (move.t == MOVE) {
-    enum dir_t move_dir = get_direction(current_pos, move.m, graph);
     if (!is_valid_position(move.m, graph))
       return 0;
     if (move.m == opponent_pos || move.m == current_pos)
       return 0;
+    
+    enum dir_t move_dir = get_direction(current_pos, move.m, graph);
     unsigned int dist = distance(
         current_pos, get_direction(current_pos, move.m, graph), move.m, graph);
+    
     if (is_straight_path(current_pos, move.m, graph, move_dir, dist) &&
-        dist <= max_dist_straight)
+        dist <= MAX_DIST_STRAIGHT_MOVE)
       return 1;
-    if (dirs_are_60_degrees_apart(
+    else if (dirs_are_60_degrees_apart(
             get_direction(previous_pos, current_pos, graph),
             get_direction(current_pos, move.m, graph)) &&
-        dist <= max_dist_60)
+        dist <= MAX_DIST_60_MOVE)
       return 1;
-    if (is_adjacent(current_pos, move.m, graph))
+    else if (is_adjacent(current_pos, move.m, graph))
       return 1;
-    return 0;
-
-  } else if (move.t == JUMP) {
+    else
+      return 0;
+  }
+  else if (move.t == JUMP) {
     if (!is_valid_position(move.m, graph))
       return 0;
     if (move.m == current_pos || move.m == opponent_pos)
       return 0;
+    
     if (!is_adjacent(current_pos, opponent_pos, graph))
       return 0;
-    if (!is_adjacent(opponent_pos, move.m, graph))
+    else if (!is_adjacent(opponent_pos, move.m, graph))
       return 0;
-    return 1;
-  } else if (move.t == WALL) {
+    else
+      return 1;
+  }
+  else if (move.t == WALL) {
     if (move.e[0].fr != move.e[1].fr)
       return 0;
     if (move.e[0].to == move.e[1].to)
@@ -206,7 +211,8 @@ int move_is_valid(struct graph_t* graph,
       return 1;
     }
   }
-  return 1;
+  else
+    return 0;
 }
 
 int move_is_waterloo(struct graph_t* graph,

@@ -1,16 +1,26 @@
 #include "graph.h"
 
+/** Checks if the move is valide */
 int move_is_valid(struct graph_t* graph,
                   struct move_t move,
                   struct move_t* previous_moves,
                   vertex_t positions[2]);
 
-// checks if the move is a waterloo, return 1 if it's a waterloo and 0 if not
+/** Checks if the move  waterloo */
 int move_is_waterloo(struct graph_t* graph,
                      struct move_t move,
                      vertex_t positions[2]);
 
-// Takes a move made by a player that is a waterloo and returns its waterloo
+/** Converts a waterloo move into waterloo type move
+ * ARGS:
+ * - move: struct move_t the move to convert
+ * - graph: struct graph_t the game graph
+ * - position: array of vertex the players positions
+ * RETURN:
+ * - waterloo type move
+ * PRECOND:
+ * - move is waterloo
+ */
 struct move_t waterloo_move(struct move_t move,
                             struct graph_t* graph,
                             vertex_t positions[2]);

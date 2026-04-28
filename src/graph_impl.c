@@ -11,7 +11,7 @@ size_t f_init_parallelogram(size_t m, struct graph_t* graph) {
   graph->type = PARALLELOGRAM;
 
   graph->num_vertices = m * m;
-  graph->num_edges = 3 * graph->num_vertices - 4 * m + 1;
+  graph->num_edges = 3U * graph->num_vertices - 4U * m + 1;
   graph->t = gsl_spmatrix_uint_alloc(graph->num_vertices, graph->num_vertices);
 
   graph->start[BLACK] = m * (m / 2);
@@ -69,25 +69,18 @@ int f_cond_triangular(size_t m, size_t i, size_t j) {
 struct graph_t graph_init(size_t m, enum graph_type_t type) {
   struct graph_t graph;
 
-  size_t (*f_init)(size_t m, struct graph_t*);
   int (*f_cond)(size_t m, size_t i, size_t j);
-
+  size_t n;
   switch (type) {
     case PARALLELOGRAM:
-      f_init = f_init_parallelogram;
+      n = f_init_parallelogram(m, &graph);
       f_cond = f_cond_parallelogram;
       break;
     case TRIANGULAR:
-      f_init = f_init_triangular;
-      f_cond = f_cond_triangular;
-      break;
-    default:
-      f_init = f_init_triangular;
+      n = f_init_triangular(m, &graph);
       f_cond = f_cond_triangular;
       break;
   }
-
-  size_t n = f_init(m, &graph);
 
   int dir_i[] = {1, 1, 0, -1, -1, 0};
   int dir_j[] = {-1, 0, 1, 1, 0, -1};
@@ -123,7 +116,7 @@ void graph_show_style(struct graph_t* graph, FILE* fptr) {
   }
 }
 
-// TODO: voir pb de coverage
+// TODO(ivargas): voir pb de coverage
 void graph_show(struct graph_t* graph, char* file_name) {
   FILE* fptr = fopen(file_name, "w");
 
