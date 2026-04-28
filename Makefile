@@ -17,10 +17,10 @@ server: src/graph_impl.o src/main.o src/move_valid.o
 
 client: $(CLIENTS)
 
-libclient1.so: src/player_GOAT.o
+libclient1.so: src/player_GOAT.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
-libclient2.so: src/player_Chickenleg.o
+libclient2.so: src/player_Chickenleg.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 dot_test: test_graph_impl

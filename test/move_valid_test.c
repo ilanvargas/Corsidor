@@ -91,6 +91,8 @@ void test_move_valid() {
        .sol = 0},
   };
   for (size_t i = 0; i < tests_len; i++) {
+    printf("\t %s: ");
+    int res = move_is_valid(graph, tests[i].move, tests[i].positions, tests[i].prev_positions);
     
   }
 }

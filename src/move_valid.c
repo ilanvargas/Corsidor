@@ -162,6 +162,15 @@ int move_is_valid(struct graph_t* graph,
       return 0;
     
     enum dir_t move_dir = get_direction(current_pos, move.m, graph);
+    if (!is_valid_position(move.m, graph)) {
+      return 0;
+    }
+    if (move.m == opponent_pos || move.m == current_pos){
+      // printf("opp position = %u\n",opponent_pos);
+      // printf("us position = %u\n",current_pos);
+      // printf("dep position = %u\n",move.m);
+      return 0;
+    }r
     unsigned int dist = distance(
         current_pos, get_direction(current_pos, move.m, graph), move.m, graph);
     

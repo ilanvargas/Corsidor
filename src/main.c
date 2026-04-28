@@ -98,8 +98,10 @@ int main(int argc, char* argv[]) {
   int winner = -1;
 
   while (winner == -1) {
-    printf("position BLACK = %u\n",positions[BLACK]);
-    printf("position WHITE = %u\n",positions[WHITE]);
+    printf("====================================\n");
+    printf("   position BLACK = %u\n",positions[BLACK]);
+    printf("   position WHITE = %u\n",positions[WHITE]);
+    printf("====================================\n");
     struct move_t move;
     if (current_player == BLACK) {
       move = players[BLACK].play(previous_moves);
