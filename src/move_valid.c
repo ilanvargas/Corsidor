@@ -162,10 +162,9 @@ int move_is_valid(struct graph_t* graph,
       return 0;
     }
     if (move.m == opponent_pos || move.m == current_pos){
-      printf("opp position = %u\n",opponent_pos);
-      printf("us position = %u\n",current_pos);
-      printf("dep position = %u\n",move.m);
-      printf("hhhhhhhhhhhhhhhhhhhhhhh\n");
+      // printf("opp position = %u\n",opponent_pos);
+      // printf("us position = %u\n",current_pos);
+      // printf("dep position = %u\n",move.m);
       return 0;
     }
     unsigned int dist = distance(
