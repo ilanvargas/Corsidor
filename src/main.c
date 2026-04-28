@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 
   int m = 6;
   int M = -1;
-  enum graph_type_t type = TRIANGULAR;
+  enum graph_type_t type = PARALLELOGRAM;
 
   // --- Command line options ---
 
@@ -69,8 +69,8 @@ int main(int argc, char* argv[]) {
     }
   }
   struct ServerPlayer players[NUM_PLAYERS];
-  players[0] = load_player("./libclient1.so");
-  players[1] = load_player("./libclient2.so");
+  players[BLACK] = load_player("./libclient1.so");
+  players[WHITE] = load_player("./libclient2.so");
 
   // random_or_config() is a fonction determine which player will start first
   // randomly
@@ -91,18 +91,22 @@ int main(int argc, char* argv[]) {
   for (unsigned int i = 0; i < NUM_PLAYERS; i++) {
     players_color[i] = (i == current_player) ? BLACK : WHITE;
     players[i].initialize(i, graph);
-    printf("The player %d (%s) join the party", i,
+    printf("The player %d (%s) join the party\n", i,
            players[i].get_player_name());
   }
 
   int winner = -1;
 
   while (winner == -1) {
+    printf("position BLACK = %u\n",positions[BLACK]);
+    printf("position WHITE = %u\n",positions[WHITE]);
     struct move_t move;
-    if (current_player == 0) {
-      move = players[0].play(previous_moves);
+    if (current_player == BLACK) {
+      move = players[BLACK].play(previous_moves);
+      printf("current player = BLACK\n");
     } else {
-      move = players[1].play(previous_moves);
+      move = players[WHITE].play(previous_moves);
+      printf("current player = WHITE\n");
     }
 
     // Validate move and check for Waterloo
@@ -118,7 +122,7 @@ int main(int argc, char* argv[]) {
       // Handle Waterloo move
       move = waterloo_move(move, graph, positions);
       previous_moves[current_player] = move;
-      continue;  // Skip turn
+      current_player = 1 - current_player;
     }
 
     // Apply the move to the graph
@@ -174,6 +178,7 @@ int main(int argc, char* argv[]) {
     }
     current_player = 1 - current_player;
   }
+  
 
   // Finalize
   for (int i = 0; i < NUM_PLAYERS; i++) {

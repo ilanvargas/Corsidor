@@ -35,13 +35,13 @@ void test_graph_show() {
 void test_graph_init() {
   printf("Test for parrallelogram graph\n");
 
-  struct graph_t g_parallelogram = graph_init(9, PARALLELOGRAM);
+  struct graph_t g_parallelogram = graph_init(6, PARALLELOGRAM);
   graph_show(&g_parallelogram, "parallelogram_test.dot");
   fprintf(stderr, "File created as parallelogram_test.dot\n");
 
   printf("Test for triangular graph\n");
 
-  struct graph_t g_triangular = graph_init(5, TRIANGULAR);
+  struct graph_t g_triangular = graph_init(6, TRIANGULAR);
   graph_show(&g_triangular, "triangular_test.dot");
   fprintf(stderr, "File created as triangular_test.dot\n");
 

@@ -16,7 +16,10 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 }
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
-  return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos - 1};
+  if (previous_moves[p_id].t == NO_TYPE){
+    return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos - 1};
+  }
+  return (struct move_t){.c = p_id, .t = MOVE, .m = previous_moves[p_id].m - 1};
 }
 
 void finalize() {
