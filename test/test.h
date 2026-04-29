@@ -5,15 +5,13 @@
   printf("\e[1mRunning: " #t "\e[0m\n"); \
   t;
 
-#define PASSED printf("\e[32mPASSED\e[0m\n");
-
-#define COMPLETE printf("END TESTS\n");
+#define COMPLETE printf("TESTS COMPLETED\n");
 
 #define CMP_INT(a,b)  \
   if (a != b){  \
-    printf("\e[31merror\033[0m\n"); \
+    printf("\e[31merror\033[0m "); \
   } \
   else  \
-    printf("\e[32mOK\e[0m\n");
+    printf("\e[32mOK\e[0m ");
 
 #endif  // __TEST_H__

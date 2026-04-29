@@ -35,7 +35,7 @@ test: build_tests
 
 build_tests: $(TESTS)
 
-test_move_valid: src/move_valid.o test/test_move_valid.o
+test_move_valid: src/move_valid.o src/graph_impl.o test/test_move_valid.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test_graph_impl: src/graph_impl.o test/graph_impl_test.o

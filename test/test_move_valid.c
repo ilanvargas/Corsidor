@@ -2,8 +2,53 @@
 #include <stdlib.h>
 
 #include "graph_impl.h"
-#include "move_valid.h"
+#include "move_check.h"
 #include "test.h"
+
+// --- Tests move type helper functions ---
+
+int path_dir_diff(struct graph_t* graph,
+                  vertex_t prev,
+                  vertex_t fr,
+                  vertex_t to,
+                  enum dir_t* dir_go); 
+
+void test_path_dir_diff() {
+  struct graph_t graph = graph_init(9, PARALLELOGRAM);
+  enum dir_t dir_go;
+
+  printf("\t Straight: ");
+  printf("%d %d -- ", path_dir_diff(&graph, 0, 1, 2, &dir_go), dir_go);
+  printf("%d %d -- ", path_dir_diff(&graph, 1, 28, 73, &dir_go), dir_go);
+
+  CMP_INT(path_dir_diff(&graph, 0, 1, 2, &dir_go), 0)
+  CMP_INT(dir_go, E)
+  CMP_INT(path_dir_diff(&graph, 1, 28, 73, &dir_go), 0)
+  CMP_INT(dir_go, SW)
+  printf("\n");
+
+  printf("\t 60 degrees: ");
+  printf("%d %d -- ", path_dir_diff(&graph, 0, 1, 10, &dir_go), dir_go);
+  printf("%d %d -- ", path_dir_diff(&graph, 1, 28, 30, &dir_go), dir_go);
+
+  CMP_INT(path_dir_diff(&graph, 0, 1, 10, &dir_go), 1)
+  CMP_INT(dir_go, SW)
+  CMP_INT(path_dir_diff(&graph, 1, 28, 30, &dir_go), 1)
+  CMP_INT(dir_go, E)
+  printf("\n");
+
+  printf("\t More angular: ");
+  printf("%d %d -- ", path_dir_diff(&graph, 0, 1, 0, &dir_go), dir_go);
+  printf("%d %d -- ", path_dir_diff(&graph, 1, 28, 27, &dir_go), dir_go);
+
+  CMP_INT(path_dir_diff(&graph, 0, 1, 0, &dir_go), 1)
+  CMP_INT(dir_go, SW)
+  CMP_INT(path_dir_diff(&graph, 1, 28, 27, &dir_go), 1)
+  CMP_INT(dir_go, E)
+  printf("\n");
+}
+
+// --- Tests main functions ---
 
 struct test_t {
   char* title;
@@ -16,9 +61,10 @@ struct test_t {
 void exec_tests(struct test_t* tests, size_t tests_len, struct graph_t* graph) {
   for (size_t i = 0; i < tests_len; i++) {
     printf("\t %s: ", tests[i].title);
-    int res = move_is_valid(graph, tests[i].move, tests[i].positions,
+    int res = move_is_valid(graph, &tests[i].move, tests[i].positions,
                             tests[i].prev_positions);
     CMP_INT(res, tests[i].sol)
+    printf("\n");
   }
 }
 
@@ -149,7 +195,10 @@ void test_jump() {
   COMPLETE
 }
 
+// --- Main ---
+
 int main() {
+  RUN(test_path_dir_diff())
   RUN(test_move())
 
   return EXIT_SUCCESS;

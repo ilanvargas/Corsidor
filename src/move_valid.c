@@ -1,8 +1,6 @@
 #include <stddef.h>
 #include <gsl/gsl_spmatrix.h>
 #include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "move_check.h"
 
@@ -50,22 +48,22 @@ enum dir_t translate_dir(int di, int dj) {
 
 /** Difference in path direction. 0 -> straight, 1 -> 60°, else more */
 int path_dir_diff(struct graph_t* graph,
-                  vertex_t p0,
-                  vertex_t p1,
-                  vertex_t p2,
+                  vertex_t prev,
+                  vertex_t fr,
+                  vertex_t to,
                   enum dir_t* dir_go) {
-  if (p0 == UINT_MAX)  // No previous move
-    return 6;
+  if (prev == UINT_MAX)  // No previous move
+    return abs(E - W);
 
   unsigned int n = graph->t->size1;
-  int p0i = p0 / n, p0j = p0 % n;
-  int p1i = p1 / n, p1j = p1 % n;
-  int p2i = p2 / n, p2j = p2 % n;
+  int prev_i = prev / n, prev_j = prev % n;
+  int fr_i = fr / n, fr_j = fr % n;
+  int to_i = to / n, to_j = to % n;
 
-  int di1 = p1i - p0i;
-  int dj1 = p1j - p0j;
-  int di2 = p2i - p1i;
-  int dj2 = p2j - p1j;
+  int di1 = fr_i - prev_i;
+  int dj1 = fr_j - prev_j;
+  int di2 = to_i - fr_i;
+  int dj2 = to_j - fr_j;
 
   enum dir_t dir1 = translate_dir(di1, dj1);
   enum dir_t dir2 = translate_dir(di2, dj2);
@@ -79,30 +77,31 @@ int path_dir_diff(struct graph_t* graph,
 int is_straigh_clear_path(struct graph_t* graph,
                           vertex_t to,
                           vertex_t fr,
-                          vertex_t op_pos,
+                          vertex_t op,
                           enum dir_t dir_go,
                           int max_dist) {
   vertex_t v = fr;
   int i = 0;
-  while (i < MAX_DIST && v != move.m) {
+  while (i < max_dist && v != to) {
     // Find neighbour in dir_go direction from v
     // General implementation for every graph type
     vertex_t u = 0;
     while (u < graph->num_vertices &&
            gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
       u++;
-    if (gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
+    if (u == graph->num_vertices ||
+        gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
       return 0;
 
     // If opponent in path
-    if (u == op_pos)
+    if (u == op)
       return 0;
 
     v = u;
     i++;
   }
 
-  // to must be found in MAX_DIST loops
+  // to must be found in max_dist loops
   return v == to;
 }
 
@@ -111,13 +110,13 @@ int is_straigh_clear_path(struct graph_t* graph,
  * - struct graph_t* graph: game graph
  * - vertex_t to:           end move position m
  * - vertex_t fr:           current player position
- * - vertex_t op:       current opponent position
- * - vertex_t prev:     previous player postion
+ * - vertex_t op:           current opponent position
+ * - vertex_t prev:         previous player postion
  */
 int move_valid(struct graph_t* graph,
                vertex_t to,
                vertex_t fr,
-               vertex_t op_pos,
+               vertex_t op,
                vertex_t prev) {
   if (!is_graph_bound(to, graph))
     return 0;
@@ -125,7 +124,7 @@ int move_valid(struct graph_t* graph,
     return 0;
 
   enum dir_t dir_go;
-  int dir_diff = path_dir_diff(graph, to, fr, prev, &dir_go);
+  int dir_diff = path_dir_diff(graph, prev, fr, to, &dir_go);
 
   // straight path
   if (dir_diff == 0)
@@ -133,12 +132,12 @@ int move_valid(struct graph_t* graph,
 
   // 60 deg path
   else if (dir_diff == 1)
-    return is_straigh_clear_path(graph, to, fr, op_pos, dir_go,
+    return is_straigh_clear_path(graph, to, fr, op, dir_go,
                                  MAX_DIST_60_DEG);
 
   // Angluar path
   else
-    return gsl_spmatrix_uint_get(graph->t, pos, move.m) != NO_EDGE;
+    return gsl_spmatrix_uint_get(graph->t, fr, to) != NO_EDGE;
 }
 
 // --- Main function ---
@@ -147,13 +146,13 @@ int move_is_valid(struct graph_t* graph,
                   struct move_t* move,
                   vertex_t positions[2],
                   vertex_t prev_positions[2]) {
-  if (move.c >= NUM_PLAYERS)
+  if (move->c >= NUM_PLAYERS)
     return 0;
 
-  switch (move.t) {
+  switch (move->t) {
     case MOVE:
-      return move_valid(graph, move->m, positions[move.c],
-                        positions[1 - move.c], prev_positions[move.c]);
+      return move_valid(graph, move->m, positions[move->c],
+                        positions[1 - move->c], prev_positions[move->c]);
     default:
       return 0;
   }
