@@ -7,43 +7,34 @@
 #define MAX_DIST 3
 #define MAX_DIST_60_DEG 2
 
-/** Checks if m is inside graph */
-int is_graph_bound(vertex_t p, struct graph_t* graph) {
-  switch (graph->type) {
-    case PARALLELOGRAM:
-      return p < graph->num_vertices;
+/** Check if 2 vertex are adjacent */
+int is_adjacent(struct graph_t* graph, vertex_t u, vertex_t v) {
+  return gsl_spmatrix_uint_get(graph->t, u, v) != NO_EDGE;
+}
 
-    case TRIANGULAR:
-      unsigned int n = graph->t->size1;
-      unsigned int i = p / n, j = p % n;
-      // Find m: seach last connected vertex from first graph line
-      unsigned int m = 1;
-      while (gsl_spmatrix_uint_get(graph->t, m, m - 1) != NO_EDGE) {
-        m++;
-      }
-      return (j < m + i) && (i < m + j);
-
-    default:
-      return p < graph->num_vertices;
-  }
+/** Checks if v is a valid vertex */
+int is_vertex_valid(struct graph_t* graph, vertex_t v) {
+  return v < graph->num_vertices;
 }
 
 // --- Validate MOVE type ---
 
 /** Find dir from differences in coordinates of 2 points */
 enum dir_t translate_dir(int di, int dj) {
-  if (di < 0 && dj < 0)
+  if (di < 0 && dj == 0)
     return NW;
-  else if (di < 0 && dj == 0)
+  else if (di < 0 && dj > 0)
     return NE;
   else if (di == 0 && dj > 0)
     return E;
-  else if (di > 0 && dj > 0)
-    return SE;
   else if (di > 0 && dj == 0)
+    return SE;
+  else if (di > 0 && dj < 0)
     return SW;
-  else
+  else if (di == 0 && dj < 0)
     return W;
+  else
+    return NO_EDGE;
 }
 
 /** Difference in path direction. 0 -> straight, 1 -> 60°, else more */
@@ -53,7 +44,7 @@ int path_dir_diff(struct graph_t* graph,
                   vertex_t to,
                   enum dir_t* dir_go) {
   if (prev == UINT_MAX)  // No previous move
-    return abs(E - W);
+    return NUM_DIRS;
 
   unsigned int n = graph->t->size1;
   int prev_i = prev / n, prev_j = prev % n;
@@ -69,7 +60,10 @@ int path_dir_diff(struct graph_t* graph,
   enum dir_t dir2 = translate_dir(di2, dj2);
 
   *dir_go = dir2;
-  return abs((int)dir1 - (int)dir2);
+  if (dir1 == dir2)
+    return 0;
+  int diff = abs((int)dir1 - (int)dir2);
+  return diff > NUM_DIRS / 2 ? NUM_DIRS - diff : diff;
 }
 
 /** Check if exists straight, clear of opponents, path between fr and to of max
@@ -118,7 +112,7 @@ int move_valid(struct graph_t* graph,
                vertex_t fr,
                vertex_t op,
                vertex_t prev) {
-  if (!is_graph_bound(to, graph))
+  if (!is_vertex_valid(graph, to))
     return 0;
   if (to == fr || to == op)
     return 0;
@@ -132,27 +126,76 @@ int move_valid(struct graph_t* graph,
 
   // 60 deg path
   else if (dir_diff == 1)
-    return is_straigh_clear_path(graph, to, fr, op, dir_go,
-                                 MAX_DIST_60_DEG);
+    return is_straigh_clear_path(graph, to, fr, op, dir_go, MAX_DIST_60_DEG);
 
   // Angluar path
   else
-    return gsl_spmatrix_uint_get(graph->t, fr, to) != NO_EDGE;
+    return is_adjacent(graph, fr, to);
+}
+
+// --- Validate JUMP type ---
+
+/* Validates JUMP type
+ * ARGS:
+ * - struct graph_t* graph: game graph
+ * - vertex_t to:           end move position m
+ * - vertex_t fr:           current player position
+ * - vertex_t op:           current opponent position
+ */
+int jump_valid(struct graph_t* graph, vertex_t to, vertex_t fr, vertex_t op) {
+  if (!is_vertex_valid(graph, to))
+    return 0;
+  if (to == fr || to == op)
+    return 0;
+
+  return is_adjacent(graph, fr, op) && is_adjacent(graph, op, to);
+}
+
+// --- Validate WALL type
+
+/* Validates WALL type
+ * ARGS:
+ * - struct graph_t* graph: game graph
+ * - vertex_t to:           end move position m
+ * - vertex_t fr:           current player position
+ * - vertex_t op:           current opponent position
+ */
+int wall_valid(struct graph_t* graph, struct edge_t e[2], int nb_walls) {
+  if (nb_walls <= 0)
+    return 0;
+  if (!is_vertex_valid(graph, e[0].fr) || !is_vertex_valid(graph, e[0].to))
+    return 0;
+  if (!is_vertex_valid(graph, e[1].fr) || !is_vertex_valid(graph, e[1].to))
+    return 0;
+
+  return e[0].fr == e[1].fr && e[0].to != e[1].to &&
+         is_adjacent(graph, e[0].fr, e[0].to) &&
+         is_adjacent(graph, e[1].fr, e[1].to) &&
+         is_adjacent(graph, e[0].to, e[1].to);
 }
 
 // --- Main function ---
 
 int move_is_valid(struct graph_t* graph,
                   struct move_t* move,
-                  vertex_t positions[2],
-                  vertex_t prev_positions[2]) {
+                  vertex_t p_pos[NUM_PLAYERS],
+                  vertex_t p_prev_pos[NUM_PLAYERS],
+                  int p_walls[NUM_PLAYERS]) {
   if (move->c >= NUM_PLAYERS)
     return 0;
 
   switch (move->t) {
     case MOVE:
-      return move_valid(graph, move->m, positions[move->c],
-                        positions[1 - move->c], prev_positions[move->c]);
+      return move_valid(graph, move->m, p_pos[move->c], p_pos[1 - move->c],
+                        p_prev_pos[move->c]);
+    case JUMP:
+      return jump_valid(graph, move->m, p_pos[move->c], p_pos[1 - move->c]);
+    case WALL:
+      if (wall_valid(graph, move->e, p_walls[move->c])) {
+        p_walls[move->c]--;
+        return 1;
+      } else
+        return 0;
     default:
       return 0;
   }

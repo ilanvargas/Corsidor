@@ -7,11 +7,10 @@
 
 #define COMPLETE printf("TESTS COMPLETED\n");
 
-#define CMP_INT(a,b)  \
-  if (a != b){  \
+#define CMP_INT(a, b)              \
+  if (a != b) {                    \
     printf("\e[31merror\033[0m "); \
-  } \
-  else  \
+  } else                           \
     printf("\e[32mOK\e[0m ");
 
 #endif  // __TEST_H__

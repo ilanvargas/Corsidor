@@ -99,8 +99,8 @@ int main(int argc, char* argv[]) {
 
   while (winner == -1) {
     printf("====================================\n");
-    printf("   position BLACK = %u\n",positions[BLACK]);
-    printf("   position WHITE = %u\n",positions[WHITE]);
+    printf("   position BLACK = %u\n", positions[BLACK]);
+    printf("   position WHITE = %u\n", positions[WHITE]);
     printf("====================================\n");
     struct move_t move;
     if (current_player == BLACK) {
@@ -180,7 +180,6 @@ int main(int argc, char* argv[]) {
     }
     current_player = 1 - current_player;
   }
-  
 
   // Finalize
   for (int i = 0; i < NUM_PLAYERS; i++) {
