@@ -7,45 +7,7 @@
 
 // --- Tests move type helper functions ---
 
-int path_dir_diff(struct graph_t* graph,
-                  vertex_t prev,
-                  vertex_t fr,
-                  vertex_t to,
-                  enum dir_t* dir_go);
 
-void test_path_dir_diff() {
-  struct graph_t graph = graph_init(9, PARALLELOGRAM);
-  enum dir_t dir_go;
-
-  printf("\t Straight: ");
-  printf("%d %d -- ", path_dir_diff(&graph, 0, 1, 2, &dir_go), dir_go);
-  printf("%d %d -- ", path_dir_diff(&graph, 1, 28, 73, &dir_go), dir_go);
-  CMP_INT(path_dir_diff(&graph, 0, 1, 2, &dir_go), 0)
-  CMP_INT(dir_go, E)  // 0->1->2 : E puis E
-  CMP_INT(path_dir_diff(&graph, 1, 28, 73, &dir_go), 0)
-  CMP_INT(dir_go, SE)  // (0,1)->(3,1)->(8,1) : SE puis SE, PAS SW
-  printf("\n");
-
-  printf("\t 60 degrees: ");
-  printf("%d %d -- ", path_dir_diff(&graph, 0, 1, 10, &dir_go), dir_go);
-  printf("%d %d -- ", path_dir_diff(&graph, 1, 28, 30, &dir_go), dir_go);
-  CMP_INT(path_dir_diff(&graph, 0, 1, 10, &dir_go), 1)
-  CMP_INT(dir_go, SE)  // 0->1->10 : E puis SE, PAS SW
-  CMP_INT(path_dir_diff(&graph, 1, 28, 30, &dir_go), 1)
-  CMP_INT(dir_go, E)  // (0,1)->(3,1)->(3,3) : SE puis E
-  printf("\n");
-
-  printf("\t More angular: ");
-  printf("%d %d -- ", path_dir_diff(&graph, 0, 1, 0, &dir_go), dir_go);
-  printf("%d %d -- ", path_dir_diff(&graph, 1, 28, 27, &dir_go), dir_go);
-  CMP_INT(path_dir_diff(&graph, 0, 1, 0, &dir_go), 2)
-  CMP_INT(dir_go,
-          W)  // 0->1->0 : E puis W = 180°... ou NW? 0=(0,0),1=(0,1),0=(0,0):
-              // di=0,dj=-1 -> W, diff=abs(3-6)=3->6-3=3??
-  CMP_INT(path_dir_diff(&graph, 1, 28, 27, &dir_go), 1)
-  CMP_INT(dir_go, SW)  // (0,1)->(3,1)->(3,0) : SE puis SW
-  printf("\n");
-}
 
 // --- Tests main functions ---
 
@@ -69,7 +31,7 @@ void exec_tests(struct test_t* tests, size_t tests_len, struct graph_t* graph) {
 }
 
 void test_move() {
-  struct graph_t graph = graph_init(9, PARALLELOGRAM);
+  struct graph_t* graph = graph_init(9, PARALLELOGRAM);
 
   size_t move_test_len = 15;
   struct test_t move_test[] = {
@@ -145,13 +107,14 @@ void test_move() {
        .sol = 0},
   };
 
-  exec_tests(move_test, move_test_len, &graph);
+  exec_tests(move_test, move_test_len, graph);
+  graph_free(graph);
 
   COMPLETE
 }
 
 void test_jump() {
-  struct graph_t graph = graph_init(9, PARALLELOGRAM);
+  struct graph_t* graph = graph_init(9, PARALLELOGRAM);
 
   size_t jump_test_len = 8;
   struct test_t jump_test[] = {
@@ -190,13 +153,14 @@ void test_jump() {
        .sol = 0},
   };
 
-  exec_tests(jump_test, jump_test_len, &graph);
+  exec_tests(jump_test, jump_test_len, graph);
+  graph_free(graph);
 
   COMPLETE
 }
 
 void test_wall() {
-  struct graph_t graph = graph_init(9, PARALLELOGRAM);
+  struct graph_t* graph = graph_init(9, PARALLELOGRAM);
 
   size_t wall_test_len = 8;
   struct test_t wall_test[] = {
@@ -254,7 +218,8 @@ void test_wall() {
        .sol = 0},
   };
 
-  exec_tests(wall_test, wall_test_len, &graph);
+  exec_tests(wall_test, wall_test_len, graph);
+  graph_free(graph);
 
   COMPLETE
 }

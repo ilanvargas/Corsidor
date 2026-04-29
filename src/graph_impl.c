@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "graph_impl.h"
 
@@ -66,18 +67,18 @@ int f_cond_triangular(size_t m, size_t i, size_t j) {
 
 // --- Graph init function ---
 
-struct graph_t graph_init(size_t m, enum graph_type_t type) {
-  struct graph_t graph;
+struct graph_t* graph_init(size_t m, enum graph_type_t type) {
+  struct graph_t* graph = malloc(sizeof(struct graph_t));
 
   int (*f_cond)(size_t m, size_t i, size_t j);
   size_t n;
   switch (type) {
     case PARALLELOGRAM:
-      n = f_init_parallelogram(m, &graph);
+      n = f_init_parallelogram(m, graph);
       f_cond = f_cond_parallelogram;
       break;
     case TRIANGULAR:
-      n = f_init_triangular(m, &graph);
+      n = f_init_triangular(m, graph);
       f_cond = f_cond_triangular;
       break;
   }
@@ -92,7 +93,7 @@ struct graph_t graph_init(size_t m, enum graph_type_t type) {
         int jj = (int)j + dir_j[d];
         if (ii >= 0 && (size_t)ii < n && jj >= 0 && (size_t)jj < n) {
           gsl_spmatrix_uint_set(
-              graph.t, i * n + j, (size_t)ii * n + (size_t)jj,
+              graph->t, i * n + j, (size_t)ii * n + (size_t)jj,
               (f_cond(m, i, j) && f_cond(m, (size_t)ii, (size_t)jj)) ? d : 0);
         }
       }
@@ -100,6 +101,14 @@ struct graph_t graph_init(size_t m, enum graph_type_t type) {
   }
 
   return graph;
+}
+
+// --- Free graph function ---
+
+void graph_free(struct graph_t* graph) {
+  gsl_spmatrix_uint_free(graph->t);
+  free(graph->objectives);
+  free(graph);
 }
 
 // --- Functions for graph representation ---
@@ -116,7 +125,6 @@ void graph_show_style(struct graph_t* graph, FILE* fptr) {
   }
 }
 
-// TODO(ivargas): voir pb de coverage
 void graph_show(struct graph_t* graph, char* file_name) {
   FILE* fptr = fopen(file_name, "w");
 

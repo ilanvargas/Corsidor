@@ -8,9 +8,13 @@
  * - m:     dictates the graph size
  * - type:  the graph type (according to graph.h)
  * RETURN:
- * - a struct graph_t carring the game graph
+ * - a pointer to struct graph_t carring the game graph
  */
-struct graph_t graph_init(size_t m, enum graph_type_t type);
+struct graph_t* graph_init(size_t m, enum graph_type_t type);
+
+/** Free struct graph_t graph
+ */
+void graph_free(struct graph_t* graph);
 
 /* Generate a .dot file from a struct graph_t for graphical representation
  * The dot file will be located in the working directory
