@@ -1,18 +1,19 @@
-GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
+#GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
+GSL_PATH ?= $(HOME)/corsidor-S6/gsl
 
 CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include -I./src
 LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
-	-Wl,--rpath=${GSL_PATH}/lib
+				-Wl,--rpath=${GSL_PATH}/lib
 
 CLIENTS = libclient1.so libclient2.so
-TESTS = 
+TESTS = test_move_valid
 
 all: build
 
 build: server client
 
-server: src/graph_impl.o src/main.o src/move_valid.o
+server: src/graph_impl.o src/move_valid.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 client: $(CLIENTS)
@@ -30,8 +31,12 @@ dot_test: test_graph_impl
 	dot -Tpdf triangular_test.dot -o triangular_test.pdf
 
 test: build_tests
+	./test_move_valid
 
 build_tests: $(TESTS)
+
+test_move_valid: src/move_valid.o test/test_move_valid.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test_graph_impl: src/graph_impl.o test/graph_impl_test.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)

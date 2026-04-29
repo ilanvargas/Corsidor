@@ -7,14 +7,13 @@
 
 #define PASSED printf("\e[32mPASSED\e[0m\n");
 
-#define COMPLETE printf("\e[32mTEST COMPLETE\e[0m\n");
+#define COMPLETE printf("END TESTS\n");
 
-#define CMP_INT(a,b)                                             \
-  if (a!=b){                                                     \
-    printf("\033[31merror\033[0m : "#a" != "#b"\n",stderr);      \
-    exit(EXIT_FAILURE);                                          \
-  }                                                              \
-  else                                                           \
-    printf("Ok\n");
+#define CMP_INT(a,b)  \
+  if (a != b){  \
+    printf("\e[31merror\033[0m\n"); \
+  } \
+  else  \
+    printf("\e[32mOK\e[0m\n");
 
 #endif  // __TEST_H__
