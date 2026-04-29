@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <gsl/gsl_spmatrix.h>
 #include <limits.h>
+#include <math.h>
 
 #include "move_check.h"
 
@@ -21,20 +22,13 @@ int is_vertex_valid(struct graph_t* graph, vertex_t v) {
 
 /** Find dir from differences in coordinates of 2 points */
 enum dir_t translate_dir(int di, int dj) {
-  if (di < 0 && dj == 0)
-    return NW;
-  else if (di < 0 && dj > 0)
-    return NE;
-  else if (di == 0 && dj > 0)
-    return E;
-  else if (di > 0 && dj == 0)
-    return SE;
-  else if (di > 0 && dj < 0)
-    return SW;
-  else if (di == 0 && dj < 0)
-    return W;
-  else
-    return NO_EDGE;
+  if (di < 0 && dj < 0) return NW;
+  else if (di < 0 && dj == 0) return NE;
+  else if (di == 0 && dj > 0) return E;
+  else if (di > 0 && dj > 0) return SE;
+  else if (di > 0 && dj == 0) return SW;
+  else if (di == 0 && dj < 0) return W;
+  else return NO_EDGE;
 }
 
 /** Difference in path direction. 0 -> straight, 1 -> 60°, else more */
@@ -43,10 +37,7 @@ int path_dir_diff(struct graph_t* graph,
                   vertex_t fr,
                   vertex_t to,
                   enum dir_t* dir_go) {
-  if (prev == UINT_MAX)  // No previous move
-    return NUM_DIRS;
-
-  unsigned int n = graph->t->size1;
+  unsigned int n = (unsigned int)sqrt((double)graph->num_vertices);
   int prev_i = prev / n, prev_j = prev % n;
   int fr_i = fr / n, fr_j = fr % n;
   int to_i = to / n, to_j = to % n;
@@ -58,8 +49,12 @@ int path_dir_diff(struct graph_t* graph,
 
   enum dir_t dir1 = translate_dir(di1, dj1);
   enum dir_t dir2 = translate_dir(di2, dj2);
-
   *dir_go = dir2;
+
+  if (prev == UINT_MAX)  // No previous move
+    return NUM_DIRS;
+
+  // Circular directions
   if (dir1 == dir2)
     return 0;
   int diff = abs((int)dir1 - (int)dir2);
@@ -191,11 +186,7 @@ int move_is_valid(struct graph_t* graph,
     case JUMP:
       return jump_valid(graph, move->m, p_pos[move->c], p_pos[1 - move->c]);
     case WALL:
-      if (wall_valid(graph, move->e, p_walls[move->c])) {
-        p_walls[move->c]--;
-        return 1;
-      } else
-        return 0;
+      return wall_valid(graph, move->e, p_walls[move->c]);
     default:
       return 0;
   }
