@@ -61,7 +61,7 @@ void exec_tests(struct test_t* tests, size_t tests_len, struct graph_t* graph) {
   }
 }
 
-void test_move() {
+void test_move_move_is_valid() {
   struct graph_t* graph = graph_init(9, PARALLELOGRAM);
 
   size_t move_test_len = 15;
@@ -147,7 +147,7 @@ void test_move() {
   COMPLETE
 }
 
-void test_jump() {
+void test_jump_move_is_valid() {
   struct graph_t* graph = graph_init(9, PARALLELOGRAM);
 
   size_t jump_test_len = 8;
@@ -193,7 +193,7 @@ void test_jump() {
   COMPLETE
 }
 
-void test_wall() {
+void test_wall_move_is_valid() {
   struct graph_t* graph = graph_init(9, PARALLELOGRAM);
 
   size_t wall_test_len = 8;
@@ -262,9 +262,9 @@ void test_wall() {
 
 int main() {
   RUN(test_helper_path_dir_diff())
-  RUN(test_move())
-  RUN(test_jump())
-  RUN(test_wall())
+  RUN(test_move_move_is_valid())
+  RUN(test_jump_move_is_valid())
+  RUN(test_wall_move_is_valid())
 
   return EXIT_SUCCESS;
 }

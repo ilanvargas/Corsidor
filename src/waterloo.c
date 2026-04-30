@@ -31,10 +31,10 @@ int convert_waterloo(struct graph_t* graph,
         // General implementation for every graph type
         vertex_t u = 0;
         while (IS_VERTEX_VALID(graph, u) &&
-               gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
+               gsl_spmatrix_uint_get(graph->t, v, u) != dir_go &&
+               !IS_WALL(graph, v, u)) 
           u++;
-        if (!IS_VERTEX_VALID(graph, u) ||
-            gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
+        if (!IS_VERTEX_VALID(graph, u))
           return 0;
 
         // If wall blocking

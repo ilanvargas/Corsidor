@@ -7,7 +7,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
 				-Wl,--rpath=${GSL_PATH}/lib
 
 CLIENTS = libclient1.so libclient2.so
-TESTS = test_move_valid
+TESTS = test_move_valid test_waterloo
 
 all: build
 
@@ -32,8 +32,12 @@ dot_test: test_graph_impl
 
 test: build_tests
 	./test_move_valid
+	./test_waterloo
 
 build_tests: $(TESTS)
+
+test_waterloo: src/waterloo.o src/graph_impl.o test/test_waterloo.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test_move_valid: src/move_valid.o src/graph_impl.o test/test_move_valid.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)

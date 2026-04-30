@@ -103,7 +103,7 @@ struct graph_t* graph_init(size_t m, enum graph_type_t type) {
   return graph;
 }
 
-// --- Free graph function and dir---
+// --- Graph functions ---
 
 void graph_free(struct graph_t* graph) {
   gsl_spmatrix_uint_free(graph->t);
@@ -119,6 +119,23 @@ enum dir_t translate_dir(int di, int dj) {
   else if (di > 0 && dj > 0) return SW;  
   else if (di == 0 && dj > 0) return W;   
   else return NO_EDGE;
+}
+
+void build_wall(struct graph_t* graph, struct edge_t e[2]) {
+  // Wall needs to be read on both sides
+  gsl_spmatrix_uint_set(
+              graph->t, e[0].fr, e[0].to,
+              gsl_spmatrix_uint_get(graph->t, e[0].fr, e[0].to) | WALL_MASK);
+  gsl_spmatrix_uint_set(
+              graph->t, e[0].to, e[0].fr,
+              gsl_spmatrix_uint_get(graph->t, e[0].to, e[0].fr) | WALL_MASK);
+
+  gsl_spmatrix_uint_set(
+              graph->t, e[1].fr, e[1].to,
+              gsl_spmatrix_uint_get(graph->t, e[1].fr, e[1].to) | WALL_MASK);
+  gsl_spmatrix_uint_set(
+              graph->t, e[1].to, e[1].fr,
+              gsl_spmatrix_uint_get(graph->t, e[1].to, e[1].fr) | WALL_MASK);
 }
 
 // --- Functions for graph representation ---
