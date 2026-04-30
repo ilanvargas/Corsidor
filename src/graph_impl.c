@@ -83,12 +83,12 @@ struct graph_t* graph_init(size_t m, enum graph_type_t type) {
       break;
   }
 
-  int dir_i[] = {1, 1, 0, -1, -1, 0};
-  int dir_j[] = {-1, 0, 1, 1, 0, -1};
+  int dir_i[] = {0, -1, -1, 0, 1, 1, 0};
+  int dir_j[] = {0, 0, -1, -1, 0, 1, 1};
 
   for (size_t i = 0; i < n; i++) {
     for (size_t j = 0; j < n; j++) {
-      for (enum dir_t d = FIRST_DIR; d < LAST_DIR; d++) {
+      for (enum dir_t d = FIRST_DIR; d <= LAST_DIR; d++) {
         int ii = (int)i + dir_i[d];
         int jj = (int)j + dir_j[d];
         if (ii >= 0 && (size_t)ii < n && jj >= 0 && (size_t)jj < n) {
@@ -103,12 +103,22 @@ struct graph_t* graph_init(size_t m, enum graph_type_t type) {
   return graph;
 }
 
-// --- Free graph function ---
+// --- Free graph function and dir---
 
 void graph_free(struct graph_t* graph) {
   gsl_spmatrix_uint_free(graph->t);
   free(graph->objectives);
   free(graph);
+}
+
+enum dir_t translate_dir(int di, int dj) {
+  if (di < 0 && dj == 0) return NW;   
+  else if (di < 0 && dj < 0) return NE;  
+  else if (di == 0 && dj < 0) return E;   
+  else if (di > 0 && dj == 0) return SE;   
+  else if (di > 0 && dj > 0) return SW;  
+  else if (di == 0 && dj > 0) return W;   
+  else return NO_EDGE;
 }
 
 // --- Functions for graph representation ---

@@ -13,7 +13,7 @@ all: build
 
 build: server client
 
-server: src/graph_impl.o src/move_valid.o
+server: src/graph_impl.o src/move_valid.o src/waterloo.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 client: $(CLIENTS)

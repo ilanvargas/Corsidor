@@ -3,6 +3,12 @@
 
 #include "graph.h"
 
+#define IS_VERTEX_VALID(graph, v) \
+  ((v) < ((graph)->t->size1 * (graph)->t->size2))
+
+#define IS_WALL(graph, fr, to) \
+  gsl_spmatrix_uint_get((graph)->t, (fr), (to)) & WALL_MASK != 0
+
 /* Initialisation of the game graph
  * PARAM:
  * - m:     dictates the graph size
@@ -20,5 +26,9 @@ void graph_free(struct graph_t* graph);
  * The dot file will be located in the working directory
  */
 void graph_show(struct graph_t* graph, char* file_name);
+
+/** Find dir from differences in coordinates of 2 points 
+ */
+enum dir_t translate_dir(int di, int dj);
 
 #endif  // __GRAPH_IMPL_H__

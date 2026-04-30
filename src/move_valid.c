@@ -13,23 +13,7 @@ int is_adjacent(struct graph_t* graph, vertex_t u, vertex_t v) {
   return gsl_spmatrix_uint_get(graph->t, u, v) != NO_EDGE;
 }
 
-/** Checks if v is a valid vertex */
-int is_vertex_valid(struct graph_t* graph, vertex_t v) {
-  return v < graph->num_vertices;
-}
-
 // --- Validate MOVE type ---
-
-/** Find dir from differences in coordinates of 2 points */
-enum dir_t translate_dir(int di, int dj) {
-  if (di < 0 && dj < 0) return NW;
-  else if (di < 0 && dj == 0) return NE;
-  else if (di == 0 && dj > 0) return E;
-  else if (di > 0 && dj > 0) return SE;
-  else if (di > 0 && dj == 0) return SW;
-  else if (di == 0 && dj < 0) return W;
-  else return NO_EDGE;
-}
 
 /** Difference in path direction. 0 -> straight, 1 -> 60°, else more */
 int path_dir_diff(struct graph_t* graph,
@@ -75,10 +59,10 @@ int is_straigh_clear_path(struct graph_t* graph,
     // Find neighbour in dir_go direction from v
     // General implementation for every graph type
     vertex_t u = 0;
-    while (u < graph->num_vertices &&
+    while (IS_VERTEX_VALID(graph, u) &&
            gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
       u++;
-    if (u == graph->num_vertices ||
+    if (!IS_VERTEX_VALID(graph, u) ||
         gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
       return 0;
 
@@ -107,7 +91,7 @@ int move_valid(struct graph_t* graph,
                vertex_t fr,
                vertex_t op,
                vertex_t prev) {
-  if (!is_vertex_valid(graph, to))
+  if (!IS_VERTEX_VALID(graph, to))
     return 0;
   if (to == fr || to == op)
     return 0;
@@ -115,17 +99,17 @@ int move_valid(struct graph_t* graph,
   enum dir_t dir_go;
   int dir_diff = path_dir_diff(graph, prev, fr, to, &dir_go);
 
+  if (is_adjacent(graph, fr, to))
+    return 1;
   // straight path
-  if (dir_diff == 0)
+  else if (dir_diff == 0)
     return is_straigh_clear_path(graph, to, fr, op, dir_go, MAX_DIST);
-
   // 60 deg path
   else if (dir_diff == 1)
     return is_straigh_clear_path(graph, to, fr, op, dir_go, MAX_DIST_60_DEG);
-
   // Angluar path
   else
-    return is_adjacent(graph, fr, to);
+    return 0;
 }
 
 // --- Validate JUMP type ---
@@ -138,7 +122,7 @@ int move_valid(struct graph_t* graph,
  * - vertex_t op:           current opponent position
  */
 int jump_valid(struct graph_t* graph, vertex_t to, vertex_t fr, vertex_t op) {
-  if (!is_vertex_valid(graph, to))
+  if (!IS_VERTEX_VALID(graph, to))
     return 0;
   if (to == fr || to == op)
     return 0;
@@ -148,6 +132,7 @@ int jump_valid(struct graph_t* graph, vertex_t to, vertex_t fr, vertex_t op) {
 
 // --- Validate WALL type
 
+#include <stdio.h>
 /* Validates WALL type
  * ARGS:
  * - struct graph_t* graph: game graph
@@ -158,10 +143,15 @@ int jump_valid(struct graph_t* graph, vertex_t to, vertex_t fr, vertex_t op) {
 int wall_valid(struct graph_t* graph, struct edge_t e[2], int nb_walls) {
   if (nb_walls <= 0)
     return 0;
-  if (!is_vertex_valid(graph, e[0].fr) || !is_vertex_valid(graph, e[0].to))
+  if (!IS_VERTEX_VALID(graph, e[0].fr) || !IS_VERTEX_VALID(graph, e[0].to))
     return 0;
-  if (!is_vertex_valid(graph, e[1].fr) || !is_vertex_valid(graph, e[1].to))
+  if (!IS_VERTEX_VALID(graph, e[1].fr) || !IS_VERTEX_VALID(graph, e[1].to))
     return 0;
+
+  printf("%d %d %d %d %d", e[0].fr == e[1].fr, e[0].to != e[1].to,
+         is_adjacent(graph, e[0].fr, e[0].to),
+         is_adjacent(graph, e[1].fr, e[1].to),
+         is_adjacent(graph, e[0].to, e[1].to));
 
   return e[0].fr == e[1].fr && e[0].to != e[1].to &&
          is_adjacent(graph, e[0].fr, e[0].to) &&

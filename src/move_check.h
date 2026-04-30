@@ -2,6 +2,7 @@
 #define __MOVE_CHECK_H__
 
 #include "graph.h"
+#include "graph_impl.h"
 
 /** Checks if a move is valide
  *  Changes p_walls[NUM_PLAYERS] if wall move
@@ -22,7 +23,7 @@ int move_is_valid(struct graph_t* graph,
 /** Checks if the move is waterloo */
 int move_is_waterloo(struct graph_t* graph,
                      struct move_t move,
-                     vertex_t positions[NUM_PLAYERS]);
+                     vertex_t p_pos[NUM_PLAYERS]);
 
 /** Converts a waterloo verifing move into waterloo type move
  * ARGS:
