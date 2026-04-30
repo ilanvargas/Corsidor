@@ -6,8 +6,11 @@
 #define IS_VERTEX_VALID(graph, v) \
   ((v) < ((graph)->t->size1 * (graph)->t->size2))
 
+#define IS_ADJACENT(graph, u, v) \
+  (gsl_spmatrix_uint_get((graph)->t, (u), (v)) != NO_EDGE)
+
 #define IS_WALL(graph, fr, to) \
-  gsl_spmatrix_uint_get((graph)->t, (fr), (to)) & WALL_MASK != 0
+  ((gsl_spmatrix_uint_get((graph)->t, (fr), (to)) & WALL_MASK) != 0)
 
 /* Initialisation of the game graph
  * PARAM:
@@ -27,7 +30,7 @@ void graph_free(struct graph_t* graph);
  */
 void graph_show(struct graph_t* graph, char* file_name);
 
-/** Find dir from differences in coordinates of 2 points 
+/** Find dir from differences in coordinates i,j of 2 points 
  */
 enum dir_t translate_dir(int di, int dj);
 

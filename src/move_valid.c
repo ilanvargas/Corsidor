@@ -5,14 +5,6 @@
 
 #include "move_check.h"
 
-#define MAX_DIST 3
-#define MAX_DIST_60_DEG 2
-
-/** Check if 2 vertex are adjacent */
-int is_adjacent(struct graph_t* graph, vertex_t u, vertex_t v) {
-  return gsl_spmatrix_uint_get(graph->t, u, v) != NO_EDGE;
-}
-
 // --- Validate MOVE type ---
 
 /** Difference in path direction. 0 -> straight, 1 -> 60°, else more */
@@ -21,7 +13,7 @@ int path_dir_diff(struct graph_t* graph,
                   vertex_t fr,
                   vertex_t to,
                   enum dir_t* dir_go) {
-  unsigned int n = (unsigned int)sqrt((double)graph->num_vertices);
+  unsigned int n = (unsigned int)sqrt((double)graph->t->size1);
   int prev_i = prev / n, prev_j = prev % n;
   int fr_i = fr / n, fr_j = fr % n;
   int to_i = to / n, to_j = to % n;
@@ -99,7 +91,7 @@ int move_valid(struct graph_t* graph,
   enum dir_t dir_go;
   int dir_diff = path_dir_diff(graph, prev, fr, to, &dir_go);
 
-  if (is_adjacent(graph, fr, to))
+  if (IS_ADJACENT(graph, fr, to))
     return 1;
   // straight path
   else if (dir_diff == 0)
@@ -127,7 +119,7 @@ int jump_valid(struct graph_t* graph, vertex_t to, vertex_t fr, vertex_t op) {
   if (to == fr || to == op)
     return 0;
 
-  return is_adjacent(graph, fr, op) && is_adjacent(graph, op, to);
+  return IS_ADJACENT(graph, fr, op) && IS_ADJACENT(graph, op, to);
 }
 
 // --- Validate WALL type
@@ -149,14 +141,14 @@ int wall_valid(struct graph_t* graph, struct edge_t e[2], int nb_walls) {
     return 0;
 
   printf("%d %d %d %d %d", e[0].fr == e[1].fr, e[0].to != e[1].to,
-         is_adjacent(graph, e[0].fr, e[0].to),
-         is_adjacent(graph, e[1].fr, e[1].to),
-         is_adjacent(graph, e[0].to, e[1].to));
+         IS_ADJACENT(graph, e[0].fr, e[0].to),
+         IS_ADJACENT(graph, e[1].fr, e[1].to),
+         IS_ADJACENT(graph, e[0].to, e[1].to));
 
   return e[0].fr == e[1].fr && e[0].to != e[1].to &&
-         is_adjacent(graph, e[0].fr, e[0].to) &&
-         is_adjacent(graph, e[1].fr, e[1].to) &&
-         is_adjacent(graph, e[0].to, e[1].to);
+         IS_ADJACENT(graph, e[0].fr, e[0].to) &&
+         IS_ADJACENT(graph, e[1].fr, e[1].to) &&
+         IS_ADJACENT(graph, e[0].to, e[1].to);
 }
 
 // --- Main function ---

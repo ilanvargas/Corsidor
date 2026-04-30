@@ -1,8 +1,13 @@
 #ifndef __MOVE_CHECK_H__
 #define __MOVE_CHECK_H__
 
-#include "graph.h"
 #include "graph_impl.h"
+
+#define MAX_DIST 3
+#define MAX_DIST_60_DEG 2
+
+#define INVALID_VERTEX -1
+#define INVALID_EDGE (struct edge_t){-1, -1}
 
 /** Checks if a move is valide
  *  Changes p_walls[NUM_PLAYERS] if wall move
@@ -20,23 +25,18 @@ int move_is_valid(struct graph_t* graph,
                   vertex_t p_prev_pos[NUM_PLAYERS],
                   int p_walls[NUM_PLAYERS]);
 
-/** Checks if the move is waterloo */
-int move_is_waterloo(struct graph_t* graph,
-                     struct move_t move,
-                     vertex_t p_pos[NUM_PLAYERS]);
-
-/** Converts a waterloo verifing move into waterloo type move
+/** Verify is move is waterloo
+ * If true returns 1 and modify move into waterloo type
+ * Else returns 0 and does nothing
  * ARGS:
- * - move: struct move_t the move to convert
- * - graph: struct graph_t the game graph
- * - position: array of vertex the players positions
+ * - move:    struct move_t the move to convert
+ * - graph:   struct graph_t the game graph
+ * - position:array of vertex the players positions
  * RETURN:
- * - waterloo type move
- * PRECOND:
- * - move is waterloo
+ * - boolean value
  */
-struct move_t convert_waterloo(struct move_t move,
-                               struct graph_t* graph,
-                               vertex_t positions[NUM_PLAYERS]);
+int convert_waterloo(struct graph_t* graph,
+                     struct move_t* move,
+                     vertex_t positions[NUM_PLAYERS]);
 
 #endif  //__MOVE_CHECK_H__
