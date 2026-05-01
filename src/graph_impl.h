@@ -3,8 +3,7 @@
 
 #include "graph.h"
 
-#define IS_VERTEX_VALID(graph, v) \
-  ((v) < (graph)->t->size1)
+#define IS_VERTEX_VALID(graph, v) ((v) < (graph)->t->size1)
 
 #define IS_ADJACENT(graph, u, v) \
   (gsl_spmatrix_uint_get((graph)->t, (u), (v)) != NO_EDGE)
@@ -21,7 +20,7 @@
  */
 struct graph_t* graph_init(size_t m, enum graph_type_t type);
 
-/** Find dir from differences in coordinates i,j of 2 points 
+/** Find dir from differences in coordinates i,j of 2 points
  */
 enum dir_t translate_dir(int di, int dj);
 

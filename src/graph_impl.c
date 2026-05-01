@@ -112,30 +112,37 @@ void graph_free(struct graph_t* graph) {
 }
 
 enum dir_t translate_dir(int di, int dj) {
-  if (di < 0 && dj == 0) return NW;   
-  else if (di < 0 && dj < 0) return NE;  
-  else if (di == 0 && dj < 0) return E;   
-  else if (di > 0 && dj == 0) return SE;   
-  else if (di > 0 && dj > 0) return SW;  
-  else if (di == 0 && dj > 0) return W;   
-  else return NO_EDGE;
+  if (di < 0 && dj == 0)
+    return NW;
+  else if (di < 0 && dj < 0)
+    return NE;
+  else if (di == 0 && dj < 0)
+    return E;
+  else if (di > 0 && dj == 0)
+    return SE;
+  else if (di > 0 && dj > 0)
+    return SW;
+  else if (di == 0 && dj > 0)
+    return W;
+  else
+    return NO_EDGE;
 }
 
 void build_wall(struct graph_t* graph, struct edge_t e[2]) {
   // Wall needs to be read on both sides
   gsl_spmatrix_uint_set(
-              graph->t, e[0].fr, e[0].to,
-              gsl_spmatrix_uint_get(graph->t, e[0].fr, e[0].to) | WALL_MASK);
+      graph->t, e[0].fr, e[0].to,
+      gsl_spmatrix_uint_get(graph->t, e[0].fr, e[0].to) | WALL_MASK);
   gsl_spmatrix_uint_set(
-              graph->t, e[0].to, e[0].fr,
-              gsl_spmatrix_uint_get(graph->t, e[0].to, e[0].fr) | WALL_MASK);
+      graph->t, e[0].to, e[0].fr,
+      gsl_spmatrix_uint_get(graph->t, e[0].to, e[0].fr) | WALL_MASK);
 
   gsl_spmatrix_uint_set(
-              graph->t, e[1].fr, e[1].to,
-              gsl_spmatrix_uint_get(graph->t, e[1].fr, e[1].to) | WALL_MASK);
+      graph->t, e[1].fr, e[1].to,
+      gsl_spmatrix_uint_get(graph->t, e[1].fr, e[1].to) | WALL_MASK);
   gsl_spmatrix_uint_set(
-              graph->t, e[1].to, e[1].fr,
-              gsl_spmatrix_uint_get(graph->t, e[1].to, e[1].fr) | WALL_MASK);
+      graph->t, e[1].to, e[1].fr,
+      gsl_spmatrix_uint_get(graph->t, e[1].to, e[1].fr) | WALL_MASK);
 }
 
 // --- Functions for graph representation ---
