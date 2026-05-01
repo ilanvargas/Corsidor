@@ -6,7 +6,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 				-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = libclient1.so libclient2.so
+CLIENTS = scarecrow.so chickenleg.so
 TESTS = test_move_valid test_waterloo
 
 all: build
@@ -18,10 +18,10 @@ server: src/graph_impl.o src/move_valid.o src/waterloo.o src/main.c
 
 client: $(CLIENTS)
 
-libclient1.so: src/player_GOAT.o src/move_valid.o
+scarecrow.so: src/player_Scarecrow.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
-libclient2.so: src/player_Chickenleg.o src/move_valid.o
+chickenleg.so: src/player_Scarecrow.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 dot_test: test_graph_impl

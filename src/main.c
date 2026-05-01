@@ -47,7 +47,7 @@ int is_player_visit(struct graph_t* graph,
   for (unsigned int i = 0; i < graph->num_objectives; i++) {
     if (pos == graph->objectives[i] && is_visited[i] == 0) {
       printf("An objective was reached\n");
-      *num_visited++;
+      (*num_visited)++;
       is_visited[i] = 1;
 
       return 1;
@@ -85,11 +85,12 @@ int main(int argc, char* argv[]) {
   int m = 6;
   int M = -1;
   enum graph_type_t type = PARALLELOGRAM;
+  int is_dot_gen = 0;
 
   // --- Command line options ---
 
   int opt;
-  while ((opt = getopt(argc, argv, "m:M:t:")) != -1) {
+  while ((opt = getopt(argc, argv, "m:M:t:g")) != -1) {
     switch (opt) {
       case 'm':
         m = atoi(optarg);
@@ -99,6 +100,9 @@ int main(int argc, char* argv[]) {
         break;
       case 't':
         type = graph_type(optarg[0], optarg[1]);
+        break;
+      case 'g':
+        is_dot_gen = 1;
         break;
     }
   }
@@ -110,8 +114,8 @@ int main(int argc, char* argv[]) {
   int color = rand() % NUM_PLAYERS;
 
   struct player_t players[NUM_PLAYERS];
-  players[color] = load_player("./libclient1.so");
-  players[1 - color] = load_player("./libclient2.so");
+  players[color] = load_player("./scarecrow.so");
+  players[1 - color] = load_player("./chickenleg.so");
 
   struct graph_t* graph = graph_init(m, type);
 
@@ -130,6 +134,11 @@ int main(int argc, char* argv[]) {
     players[i].initialize(i, graph_init(m, type));
     printf("The player %s join the game as %s\n", players[i].get_player_name(),
            i == 0 ? "BLACK" : "WHITE");
+  }
+
+  if (is_dot_gen) {
+    printf("dot file created game.dot");
+    graph_show(graph, "game.dot");
   }
 
   // --- Game ---
@@ -158,6 +167,8 @@ int main(int argc, char* argv[]) {
 
     if (!move_is_valid(graph, &move, p_pos, p_prev_pos, p_walls)) {
       fprintf(stderr, "Invalid move by %s\n", color_str);
+      printf("%s plays {.t= %d, .m= %d ...} -> invalid\n", 
+          color_str, move.t, move.m);
       printf("%s wins by invalid move!\n", color_op_str);  // Opponent wins
       break;
     }
