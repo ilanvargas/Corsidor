@@ -1,5 +1,5 @@
-#include <stddef.h>
 #include <gsl/gsl_spmatrix.h>
+#include <stddef.h>
 
 #include "move_check.h"
 
@@ -18,7 +18,7 @@ int convert_waterloo(struct graph_t* graph,
   vertex_t to = move->m;
 
   switch (move->t) {
-    case MOVE: 
+    case MOVE:
       unsigned int n = (unsigned int)sqrt((double)graph->t->size1);
       int fr_i = fr / n, fr_j = fr % n;
       int to_i = to / n, to_j = to % n;
@@ -32,7 +32,7 @@ int convert_waterloo(struct graph_t* graph,
         vertex_t u = 0;
         while (IS_VERTEX_VALID(graph, u) &&
                gsl_spmatrix_uint_get(graph->t, v, u) != dir_go &&
-               !IS_WALL(graph, v, u)) 
+               !IS_WALL(graph, v, u))
           u++;
         if (!IS_VERTEX_VALID(graph, u))
           return 0;
@@ -41,7 +41,7 @@ int convert_waterloo(struct graph_t* graph,
         if (IS_WALL(graph, v, u)) {
           move->t = WATERLOO;
           move->m = v;
-          move->e[0] = (struct edge_t){v, u}; 
+          move->e[0] = (struct edge_t){v, u};
           move->e[1] = INVALID_EDGE;
 
           return 1;
@@ -57,20 +57,18 @@ int convert_waterloo(struct graph_t* graph,
       if (IS_WALL(graph, fr, op)) {
         move->t = WATERLOO;
         move->m = fr;
-        move->e[0] = (struct edge_t){fr, op}; 
+        move->e[0] = (struct edge_t){fr, op};
         move->e[1] = INVALID_EDGE;
 
         return 1;
-      }
-      else if (IS_WALL(graph, op, to)) {
+      } else if (IS_WALL(graph, op, to)) {
         move->t = WATERLOO;
         move->m = fr;
         move->e[0] = (struct edge_t){op, to};
         move->e[0] = INVALID_EDGE;
 
         return 1;
-      }
-      else
+      } else
         return 0;
 
     case WALL:
@@ -79,27 +77,23 @@ int convert_waterloo(struct graph_t* graph,
         move->e[1] = INVALID_EDGE;
 
         return 1;
-      }
-      else if (IS_WALL(graph, move->e[1].fr, move->e[1].to)) {
+      } else if (IS_WALL(graph, move->e[1].fr, move->e[1].to)) {
         move->t = WATERLOO;
         move->e[0] = move->e[1];
         move->e[1] = INVALID_EDGE;
 
         return 1;
-      }
-      else if (is_block_op(graph, move, p_pos)) {
+      } else if (is_block_op(graph, move, p_pos)) {
         move->t = WATERLOO;
         move->m = INVALID_VERTEX;
         move->e[0] = INVALID_EDGE;
         move->e[1] = INVALID_EDGE;
 
         return 1;
-      }
-      else
+      } else
         return 0;
 
     default:
       return 0;
   }
 }
-
