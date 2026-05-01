@@ -1,6 +1,8 @@
 #ifndef __MOVE_CHECK_H__
 #define __MOVE_CHECK_H__
 
+#include <limits.h>
+
 #include "graph_impl.h"
 
 #define MAX_DIST 3

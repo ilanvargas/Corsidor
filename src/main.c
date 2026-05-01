@@ -1,23 +1,14 @@
 #include <dlfcn.h>
 #include <getopt.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-#include "graph.h"
-#include "graph_impl.h"
-#include "move.h"
-#include "move_valid.h"
+#include "move_check.h"
 #include "player.h"
 
-// Function pointers for dynamic loading
-typedef char const* (*get_player_name_t)();
-typedef void (*initialize_t)(unsigned int, struct graph_t*);
-typedef struct move_t (*play_t)(const struct move_t[]);
-typedef void (*finalize_t)();
-
-typedef struct ServerPlayer {
+struct player_t {
   void* handle;
   char const* (*get_player_name)(void);
   void (*initialize)(unsigned int, struct graph_t*);
@@ -25,23 +16,66 @@ typedef struct ServerPlayer {
   void (*finalize)(void);
 };
 
-struct ServerPlayer load_player(const char* library_path) {
-  struct ServerPlayer sp;
-  sp.handle = dlopen(library_path, RTLD_LAZY);
-  if (!sp.handle) {
+/** Loads player from dynamic librairy
+ * Opens dlopen, remember to close it
+ */
+struct player_t load_player(const char* library_path) {
+  struct player_t p;
+  p.handle = dlopen(library_path, RTLD_LAZY);
+  if (!p.handle) {
     fprintf(stderr, "Erreur de chargement de %s: %s\n", library_path,
             dlerror());
     exit(EXIT_FAILURE);
   }
-  sp.get_player_name = dlsym(sp.handle, "get_player_name");
-  sp.initialize = dlsym(sp.handle, "initialize");
-  sp.play = dlsym(sp.handle, "play");
-  sp.finalize = dlsym(sp.handle, "finalize");
+  p.get_player_name = (char const* (*)(void))dlsym(p.handle, "get_player_name");
+  p.initialize =
+      (void (*)(unsigned int, struct graph_t*))dlsym(p.handle, "initialize");
+  p.play = (struct move_t (*)(const struct move_t*))dlsym(p.handle, "play");
+  p.finalize = (void (*)(void))dlsym(p.handle, "finalize");
 
-  return sp;
+  return p;
 }
 
-unsigned int random_or_config() {
+/** Verify is player reached an objective
+ *  If its the case updated p_num_visited and p_is_visited
+ *  and return 1
+ */
+int is_player_visit(struct graph_t* graph,
+                    vertex_t pos,
+                    unsigned int* num_visited,
+                    int* is_visited) {
+  for (unsigned int i = 0; i < graph->num_objectives; i++) {
+    if (pos == graph->objectives[i] && is_visited[i] == 0) {
+      printf("An objective was reached\n");
+      *num_visited++;
+      is_visited[i] = 1;
+
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+/** Verify is game is finished and who won */
+int is_end_game(struct graph_t* graph,
+                int turn,
+                int M,
+                unsigned int p_num_visited[NUM_PLAYERS]) {
+  if (M > 0 && turn > M) {
+    printf("Max turn reached, game is over\n");
+    return 1;
+  }
+
+  // if a player visited all objectives
+  for (int i = 0; i < NUM_PLAYERS; i++) {
+    if (p_num_visited[i] >= graph->num_objectives) {
+      printf("%s visited all objectives and won game. Congratulations",
+             (i == 0) ? "BLACK" : "WHITE");
+      return 1;
+    }
+  }
+
   return 0;
 }
 
@@ -68,129 +102,130 @@ int main(int argc, char* argv[]) {
         break;
     }
   }
-  struct ServerPlayer players[NUM_PLAYERS];
-  players[BLACK] = load_player("./libclient1.so");
-  players[WHITE] = load_player("./libclient2.so");
 
-  // random_or_config() is a fonction determine which player will start first
-  // randomly
-  unsigned int current_player = random_or_config();
-  // Initialize graph
-  struct graph_t* graph = malloc(sizeof(struct graph_t));
-  *graph = graph_init(m, type);
-  // Player positions
-  vertex_t positions[NUM_PLAYERS] = {graph->start[0], graph->start[1]};
-  // Visited objectives
-  int visited1[graph->num_objectives];
-  int visited2[graph->num_objectives];
-  memset(visited1, 0, sizeof(visited1));
-  memset(visited2, 0, sizeof(visited2));
+  // --- Initialisation ---
 
-  struct move_t previous_moves[NUM_PLAYERS] = {{.t = NO_TYPE}, {.t = NO_TYPE}};
-  enum player_color_t players_color[NUM_PLAYERS];
-  for (unsigned int i = 0; i < NUM_PLAYERS; i++) {
-    players_color[i] = (i == current_player) ? BLACK : WHITE;
-    players[i].initialize(i, graph);
-    printf("The player %d (%s) join the party\n", i,
-           players[i].get_player_name());
+  // pick a random color based on time
+  srand(time(NULL));
+  int color = rand() % NUM_PLAYERS;
+
+  struct player_t players[NUM_PLAYERS];
+  players[color] = load_player("./libclient1.so");
+  players[1 - color] = load_player("./libclient2.so");
+
+  struct graph_t* graph = graph_init(m, type);
+
+  int p_walls[NUM_PLAYERS] = {graph->num_edges / 16, graph->num_edges / 16};
+  vertex_t p_pos[NUM_PLAYERS] = {graph->start[BLACK], graph->start[WHITE]};
+  vertex_t p_prev_pos[NUM_PLAYERS] = {UINT_MAX, UINT_MAX};
+  struct move_t p_prev_moves[NUM_PLAYERS] = {{.t = NO_TYPE}, {.t = NO_TYPE}};
+
+  unsigned int p_num_visited[NUM_PLAYERS] = {0};
+  int p_is_visited[NUM_PLAYERS][graph->num_objectives];
+  memset(p_is_visited, 0, sizeof(p_is_visited));
+
+  for (int i = 0; i < NUM_PLAYERS; i++) {
+    // Each player has their own graph so they can not modify it or see wall
+    // placement
+    players[i].initialize(i, graph_init(m, type));
+    printf("The player %s join the game as %s\n", players[i].get_player_name(),
+           i == 0 ? "BLACK" : "WHITE");
   }
 
-  int winner = -1;
+  // --- Game ---
 
-  while (winner == -1) {
-    printf("====================================\n");
-    printf("   position BLACK = %u\n", positions[BLACK]);
-    printf("   position WHITE = %u\n", positions[WHITE]);
-    printf("====================================\n");
+  int turn = 0;
+  while (!is_end_game(graph, turn, M, p_num_visited)) {
+    if (M > 0)
+      printf("======= turn %d out of %d =======\n", turn, M);
+    else
+      printf("============ turn %d ============\n", turn);
+    printf("\t BLACK position: %u, objectives captured: %d\n", p_pos[BLACK],
+           p_num_visited[BLACK]);
+    printf("\t WHITE position: %u, objectives captured: %d\n", p_pos[WHITE],
+           p_num_visited[WHITE]);
+    printf("=================================\n");
+
     struct move_t move;
-    if (current_player == BLACK) {
-      move = players[BLACK].play(previous_moves);
-      printf("current player = BLACK\n");
-    } else {
-      move = players[WHITE].play(previous_moves);
-      printf("current player = WHITE\n");
-    }
+    int color_turn = turn % NUM_PLAYERS;
+    char* color_str = (color_turn == 0) ? "WHITE" : "BLACK";
+    char* color_op_str = (color_turn != 0) ? "WHITE" : "BLACK";
 
-    // Validate move and check for Waterloo
-    if (!move_is_valid(graph, move, previous_moves, positions)) {
-      fprintf(stderr, "Invalid move by player %d\n", current_player);
-      // End game
-      winner = 1 - current_player;  // Opponent wins
-      printf("Player %d wins by invalid move!\n", winner);
+    if (color_turn == WHITE)
+      move = players[BLACK].play(p_prev_moves);
+    else
+      move = players[WHITE].play(p_prev_moves);
+
+    if (!move_is_valid(graph, &move, p_pos, p_prev_pos, p_walls)) {
+      fprintf(stderr, "Invalid move by %s\n", color_str);
+      printf("%s wins by invalid move!\n", color_op_str);  // Opponent wins
       break;
     }
-    if (move_is_waterloo(graph, move, positions)) {
-      printf("Player %d played a Waterloo move!\n", current_player);
-      // Handle Waterloo move
-      move = waterloo_move(move, graph, positions);
-      previous_moves[current_player] = move;
-      current_player = 1 - current_player;
-    }
 
-    // Apply the move to the graph
-    if (move.t == MOVE) {
-      positions[move.c] = move.m;
-      printf("Player %d moved to position %u\n", current_player, move.m);
-    } else if (move.t == WALL) {
-      // Remove the edges for the wall
-      gsl_spmatrix_uint_set(graph->t, move.e[0].fr, move.e[0].to, NO_EDGE);
-      gsl_spmatrix_uint_set(graph->t, move.e[1].fr, move.e[1].to, NO_EDGE);
-      // Also remove reverse edges if undirected
-      gsl_spmatrix_uint_set(graph->t, move.e[0].to, move.e[0].fr, NO_EDGE);
-      gsl_spmatrix_uint_set(graph->t, move.e[1].to, move.e[1].fr, NO_EDGE);
-      printf("Player %d placed a wall\n", current_player);
-    } else if (move.t == WATERLOO) {
-      // For WATERLOO, position may have changed
-      if (move.m != positions[move.c]) {
-        positions[move.c] = move.m;
-        printf("Player %d stopped at position %u due to wall\n", current_player,
-               move.m);
-      }
-    }
+    // move application
+    switch (move.t) {
+      case MOVE:
+        vertex_t prev_movem = move.m;
+        if (convert_waterloo(graph, &move, p_pos))
+          printf(
+              "%s tried to MOVE to %d but made waterloo move. Player moves to "
+              "%d\n",
+              color_str, prev_movem, move.m);
+        else
+          printf("%s moves to %d\n", color_str, move.m);
 
-    // Mark visited objectives (check all objectives)
-    for (unsigned int i = 0; i < graph->num_objectives; i++) {
-      if (positions[current_player] == graph->objectives[i]) {
-        if (current_player == 0) {
-          visited1[i] = 1;
-        } else {
-          visited2[i] = 1;
+        p_prev_pos[color_turn] = p_pos[color_turn];
+        p_pos[color_turn] = move.m;
+        is_player_visit(graph, p_pos[color_turn], &p_num_visited[color_turn],
+                        p_is_visited[color_turn]);
+
+            break;
+      case JUMP:
+        if (convert_waterloo(graph, &move, p_pos))
+          printf(
+              "%s tried to JUMP to %d but made waterloo move. Player: stays in "
+              "place\n",
+              color_str, move.m);
+        else {
+          printf("%s JUMPS to %d\n", color_str, move.m);
+
+          p_prev_pos[color_turn] = p_pos[color_turn];
+          p_pos[color_turn] = move.m;
         }
-      }
-    }
 
-    // Update previous moves
-    previous_moves[current_player] = move;
-
-    // Check for win condition
-    // Player wins by visiting all objectives and returning to start
-    int* visited = (current_player == 0) ? visited1 : visited2;
-    int all_objectives_visited = 1;
-    for (unsigned int i = 0; i < graph->num_objectives; i++) {
-      if (!visited[i]) {
-        all_objectives_visited = 0;
         break;
-      }
+      case WALL:
+        if (convert_waterloo(graph, &move, p_pos))
+          printf(
+              "%s tried to put WALL on edges (%d, %d) and (%d, %d) but made "
+              "waterloo move. No wall is placed\n",
+              color_str, move.e[0].fr, move.e[0].to, move.e[1].fr,
+              move.e[1].to);
+        else {
+          printf("%s put WALL on edges (%d, %d) and (%d, %d)\n", color_str,
+                 move.e[0].fr, move.e[0].to, move.e[1].fr, move.e[1].to);
+
+          build_wall(graph, move.e);
+        }
+
+        break;
+      default:
+        exit(EXIT_FAILURE);  // Unreacheacle case
     }
-    if (all_objectives_visited &&
-        positions[current_player] == graph->start[current_player]) {
-      winner = current_player;
-      printf("Player %d wins by visiting all objectives and returning home!\n",
-             winner);
-    }
-    current_player = 1 - current_player;
+
+    p_prev_moves[color_turn] = move;
+
+    turn++;
   }
 
-  // Finalize
+  // --- Finalize ---
+
   for (int i = 0; i < NUM_PLAYERS; i++) {
     players[i].finalize();
     dlclose(players[i].handle);
   }
 
-  // Free graph
-  free(graph->objectives);
-  gsl_spmatrix_uint_free(graph->t);
-  free(graph);
+  graph_free(graph);
 
   return EXIT_SUCCESS;
 }

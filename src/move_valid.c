@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include <gsl/gsl_spmatrix.h>
-#include <limits.h>
 #include <math.h>
 
 #include "move_check.h"
