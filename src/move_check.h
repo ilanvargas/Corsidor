@@ -9,7 +9,10 @@
 #define MAX_DIST_60_DEG 2
 
 #define INVALID_VERTEX -1
-#define INVALID_EDGE (struct edge_t){-1, -1}
+#define INVALID_EDGE \
+  (struct edge_t) {  \
+    -1, -1           \
+  }
 
 /** Checks if a move is valide
  *  Changes p_walls[NUM_PLAYERS] if wall move

@@ -12,7 +12,9 @@ vertex_t p_pos;
 vertex_t op_pos;
 int p_walls_left;
 
-char const* get_player_name() { return p_name; }
+char const* get_player_name() {
+  return p_name;
+}
 
 void initialize(unsigned int player_id, struct graph_t* graph) {
   p_id = player_id;
@@ -80,7 +82,8 @@ unsigned int* dijkstra(struct graph_t* graph, vertex_t source) {
   return dist;
 }
 
-static unsigned int get_closest_objective(vertex_t pos, vertex_t* next_objective) {
+static unsigned int get_closest_objective(vertex_t pos,
+                                          vertex_t* next_objective) {
   unsigned int* dist = dijkstra(&p_graph, pos);
   unsigned int best_dist = UINT_MAX;
   vertex_t best_objective = p_graph.objectives[0];
@@ -94,7 +97,7 @@ static unsigned int get_closest_objective(vertex_t pos, vertex_t* next_objective
   }
 
   free(dist);
-    *next_objective = best_objective;
+  *next_objective = best_objective;
   return best_dist;
 }
 
