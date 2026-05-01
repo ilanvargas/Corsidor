@@ -1,4 +1,4 @@
-#include "move_valid.h"
+#include "move_check.h"
 #include "player.h"
 
 char const* p_name = "Chickenleg";
