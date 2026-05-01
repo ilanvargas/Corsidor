@@ -123,7 +123,6 @@ int jump_valid(struct graph_t* graph, vertex_t to, vertex_t fr, vertex_t op) {
 
 // --- Validate WALL type
 
-#include <stdio.h>
 /* Validates WALL type
  * ARGS:
  * - struct graph_t* graph: game graph
@@ -138,11 +137,6 @@ int wall_valid(struct graph_t* graph, struct edge_t e[2], int nb_walls) {
     return 0;
   if (!IS_VERTEX_VALID(graph, e[1].fr) || !IS_VERTEX_VALID(graph, e[1].to))
     return 0;
-
-  printf("%d %d %d %d %d", e[0].fr == e[1].fr, e[0].to != e[1].to,
-         IS_ADJACENT(graph, e[0].fr, e[0].to),
-         IS_ADJACENT(graph, e[1].fr, e[1].to),
-         IS_ADJACENT(graph, e[0].to, e[1].to));
 
   return e[0].fr == e[1].fr && e[0].to != e[1].to &&
          IS_ADJACENT(graph, e[0].fr, e[0].to) &&

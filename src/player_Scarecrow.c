@@ -26,6 +26,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 
   for (unsigned int v = 0; v < p_graph->t->size1; v++) {
     if (IS_ADJACENT(p_graph, p_pos, v) && op_pos != v) {
+      p_pos = v;
       return (struct move_t){.c = p_id, .t = MOVE, .m = v};
     }
   }

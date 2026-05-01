@@ -157,8 +157,8 @@ int main(int argc, char* argv[]) {
 
     struct move_t move;
     int color_turn = turn % NUM_PLAYERS;
-    char* color_str = (color_turn == 0) ? "WHITE" : "BLACK";
-    char* color_op_str = (color_turn != 0) ? "WHITE" : "BLACK";
+    char* color_str = (color_turn == 0) ? "BLACK" : "WHITE";
+    char* color_op_str = (color_turn == 0) ? "WHITE" : "BLACK";
 
     if (color_turn == WHITE)
       move = players[BLACK].play(p_prev_moves);

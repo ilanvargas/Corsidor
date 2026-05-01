@@ -1,5 +1,7 @@
 #GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
 GSL_PATH ?= $(HOME)/corsidor-S6/gsl
+#DOT ?= dot
+DOT ?= $(HOME)/corsidor-S6/graphviz/bin/dot
 
 CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include -I./src
 LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
@@ -26,9 +28,9 @@ chickenleg.so: src/player_Scarecrow.o src/move_valid.o
 
 dot_test: test_graph_impl
 	./test_graph_impl
-	dot -Tpdf test1.dot -o test1.pdf
-	dot -Tpdf parallelogram_test.dot -o parallelogram_test.pdf
-	dot -Tpdf triangular_test.dot -o triangular_test.pdf
+	$(DOT) -Tpdf test1.dot -o test1.pdf
+	$(DOT) -Tpdf parallelogram_test.dot -o parallelogram_test.pdf
+	$(DOT) -Tpdf triangular_test.dot -o triangular_test.pdf
 
 test: build_tests
 	./test_move_valid
@@ -42,7 +44,7 @@ test_waterloo: src/waterloo.o src/graph_impl.o test/test_waterloo.o
 test_move_valid: src/move_valid.o src/graph_impl.o test/test_move_valid.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-test_graph_impl: src/graph_impl.o test/graph_impl_test.o
+test_graph_impl: src/graph_impl.o test/test_graph_impl.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 %.o: %.c
