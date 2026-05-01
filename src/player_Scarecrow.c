@@ -21,7 +21,7 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 }
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
-  if (previous_moves[1 - p_id].m == MOVE || previous_moves[1 - p_id].m == JUMP)
+  if (previous_moves[1 - p_id].t == MOVE || previous_moves[1 - p_id].t == JUMP)
     op_pos = previous_moves[1 - p_id].m;
 
   for (unsigned int v = 0; v < p_graph->t->size1; v++) {

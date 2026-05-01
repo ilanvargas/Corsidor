@@ -82,7 +82,7 @@ int is_end_game(struct graph_t* graph,
 int main(int argc, char* argv[]) {
   // --- Game variable ---
 
-  int m = 6;
+  int m = 5;
   int M = -1;
   enum graph_type_t type = PARALLELOGRAM;
   int is_dot_gen = 0;
@@ -136,8 +136,10 @@ int main(int argc, char* argv[]) {
            i == 0 ? "BLACK" : "WHITE");
   }
 
+  // Creation of dot file for board represantation
+  // If asked
   if (is_dot_gen) {
-    printf("dot file created game.dot");
+    printf("\e[1mdot file created: game.dot\e[0m\n");
     graph_show(graph, "game.dot");
   }
 
@@ -160,7 +162,7 @@ int main(int argc, char* argv[]) {
     char* color_str = (color_turn == 0) ? "BLACK" : "WHITE";
     char* color_op_str = (color_turn == 0) ? "WHITE" : "BLACK";
 
-    if (color_turn == WHITE)
+    if (color_turn == BLACK)
       move = players[BLACK].play(p_prev_moves);
     else
       move = players[WHITE].play(p_prev_moves);
