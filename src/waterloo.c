@@ -7,6 +7,30 @@
 int is_block_op(struct graph_t* graph,
                 struct move_t* move,
                 vertex_t p_pos[NUM_PLAYERS]) {
+  /*
+  int visited[graph->num_vertices];
+  memset(visited, 0, sizeof(visited));
+  vertex_t queue[graph->num_vertices];
+  int read = 0, write = 0;
+  queue[write++] = start;
+  visited[start] = 1;
+
+  while (read < write) {
+    vertex_t current = queue[read++];
+    for (vertex_t neighbor = 0; neighbor < graph->num_vertices; neighbor++) {
+      if (edge_exists(current, neighbor, graph) && !visited[neighbor]) {
+        visited[neighbor] = 1;
+        queue[write++] = neighbor;
+      }
+    }
+  }
+
+  for (int i = 0; i < num_targets; i++) {
+    if (!visited[targets[i]])
+      return 0;
+  }
+  return 1;
+  */
   return 0;
 }
 
