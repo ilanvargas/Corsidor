@@ -40,7 +40,7 @@ static void djikstra_with_prev(struct graph_t* graph,
                                vertex_t source,
                                unsigned int* dist,
                                vertex_t* prev) {
-  unsigned int n = graph->num_vertices;
+  unsigned int n = graph->t->size1;
 
   for (unsigned int i = 0; i < n; i++) {
     dist[i] = UINT_MAX;
@@ -84,8 +84,13 @@ static void djikstra_with_prev(struct graph_t* graph,
   free(visited);
 }
 
+/*
+* Get the distance from source to all vertices using Dijkstra's algorithm.
+* Returns an array of distances, where dist[i] is the distance from source to vertex i. 
+* If a vertex is unreachable from source, its distance will be UINT_MAX.
+*/
 unsigned int* djikstra(struct graph_t* graph, vertex_t source) {
-  unsigned int n = graph->num_vertices;
+  unsigned int n = graph->t->size1;
   unsigned int* dist = malloc(n * sizeof(unsigned int));
   vertex_t* prev = malloc(n * sizeof(vertex_t));
 
@@ -94,13 +99,21 @@ unsigned int* djikstra(struct graph_t* graph, vertex_t source) {
   return dist;
 }
 
+/*
+* Check if an objective is reachable with acceleration.
+* Returns 1 if reachable, 0 otherwise.
+*/
 static int objective_reachable_with_acceleration(vertex_t pos,
                                                  vertex_t objective,
                                                  vertex_t prev_pos,
                                                  vertex_t op_pos) {
   enum dir_t dir_go;
+  if (IS_ADJACENT(&p_graph, pos, objective) && !IS_WALL(&p_graph, pos, objective)) {
+    return 1;
+  }
+                                                
   int dir_diff = path_dir_diff(&p_graph, prev_pos, pos, objective, &dir_go);
-
+                                        
   if (dir_diff == 0) {
     return is_straigh_clear_path(&p_graph, objective, pos, op_pos, dir_go, MAX_DIST);
   }
@@ -110,6 +123,10 @@ static int objective_reachable_with_acceleration(vertex_t pos,
   return 0;
 }
 
+/*
+* Get the closest objective to the current position, and its distance.
+* returns the distance, and sets *next_objective to the closest objective.
+*/
 static unsigned int get_closest_objective(vertex_t pos,
                                             vertex_t* next_objective) {
   unsigned int* dist = djikstra(&p_graph, pos);
@@ -165,6 +182,12 @@ static int build_shortest_path(vertex_t source,
   while (cur != UINT_MAX) { // Trace back from target to source using prev array
     path[len] = cur;
     if (cur == source) {
+      if (len == 0) { // Source and target are the same
+        free(dist);
+        free(prev);
+        *path_len = 0;
+        return 1;
+      }
       break;
     }
     len++;
@@ -227,5 +250,111 @@ static unsigned int evaluate_wall_gain(struct edge_t wall[2],
   return (new_dist > original_dist) ? new_dist - original_dist : 0;
 }
 
+/*
+  * Find a pair of edges that can be used to place a wall between source and target
+  * Returns 1 if such a pair of edges is found, 0 otherwise. 
+  * If found, the candidate edges are stored in the candidate array.
+ */
+static int find_wall_candidate_for_edge(vertex_t source,
+                                        vertex_t target,
+                                        struct edge_t candidate[2]) {
+  unsigned int n = p_graph.t->size1;
+
+  for (unsigned int other = 0; other < n; other++) {
+    if (other == target) {
+      continue;
+    }
+    if (!IS_ADJACENT(&p_graph, source, other) ||
+        !IS_ADJACENT(&p_graph, target, other)) { // other must be adjacent to both source and target
+      continue;
+    }
+
+    if (IS_WALL(&p_graph, source, other) || IS_WALL(&p_graph, source, target)) {
+      continue;
+    }
+
+    candidate[0].fr = source;
+    candidate[0].to = target;
+    candidate[1].fr = source;
+    candidate[1].to = other;
+    return 1;
+  }
+
+  return 0;
+}
+
+/*
+* Find the best wall to place to increase the opponent's distance to their closest objective.
+* best_wall will contain the edges to place the wall on, and gain_ptr will contain the gain in distance for the opponent.
+*/
+static void find_best_wall(vertex_t opp_pos,
+                           vertex_t opp_checkpoint,
+                           struct edge_t best_wall[2],
+                           unsigned int* gain_ptr) {
+  unsigned int n = p_graph.t->size1;
+  vertex_t path[n];
+  unsigned int path_len = 0;
+  unsigned int* opp_dist = dijkstra(&p_graph, opp_pos);
+  unsigned int original_dist = opp_dist[opp_checkpoint];
+  free(opp_dist);
+
+  *gain_ptr = 0;
+  best_wall[0].fr = UINT_MAX;
+  best_wall[0].to = UINT_MAX;
+  best_wall[1].fr = UINT_MAX;
+  best_wall[1].to = UINT_MAX;
+
+  int path_exists = build_shortest_path(opp_pos, opp_checkpoint, path, &path_len);
+  if (!path_exists) { // No path exists, no wall can be placed to increase distance
+    return;
+  }
+  if (path_len == 0) { // Opp is already at the checkpoint, 
+      return;
+    }
+  if (path_len == 1) { // Opp and opp_checkpoint are adjacent,  
+                       // so we consider it as the best wall with maximum gain
+  unsigned int gain = evaluate_wall_gain(candidate, opp_pos,
+                    opp_checkpoint, original_dist);  
+  if (gain != UINT_MAX) {
+    *gain_ptr = gain;
+    find_wall_candidate_for_edge(opp_pos, opp_checkpoint, best_wall);
+    return;
+  } else { // If gain is UINT_MAX, it means placing the wall would make the opponent's checkpoint unreachable,
+           // this should not be allowed, so we return without setting a wall.
+
+    return;
+  }
+  }
+
+  /*
+  * For each edge in the shortest path from opp_pos to opp_checkpoint,
+  *  we check if placing a wall on that edge (in either direction) would increase the opponent's distance to their checkpoint. 
+  *  We keep track of the best gain and the corresponding wall placement.
+  */
+  for (unsigned int i = 0; i + 1 < path_len; i++) {
+    vertex_t u = path[i];
+    vertex_t v = path[i + 1];
+    struct edge_t candidate[2];
+
+    if (find_wall_candidate_for_edge(u, v, candidate)) {
+      unsigned int gain = evaluate_wall_gain(candidate, opp_pos,
+                                            opp_checkpoint, original_dist);
+      if (gain > *gain_ptr) {
+        *gain_ptr = gain;
+        best_wall[0] = candidate[0];
+        best_wall[1] = candidate[1];
+      }
+    }
+    if (find_wall_candidate_for_edge(v, u, candidate)) {
+      unsigned int gain = evaluate_wall_gain(candidate, opp_pos,
+                                            opp_checkpoint, original_dist);
+      if (gain > *gain_ptr) {
+        *gain_ptr = gain;
+        best_wall[0] = candidate[0];
+        best_wall[1] = candidate[1];
+      }
+    }
+  }
+}
 void finalize() { return; }
 

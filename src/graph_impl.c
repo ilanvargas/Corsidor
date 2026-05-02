@@ -111,6 +111,9 @@ void graph_free(struct graph_t* graph) {
   free(graph);
 }
 
+/*
+ * Translate a direction vector (di, dj) to a direction enum.
+ */
 enum dir_t translate_dir(int di, int dj) {
   if (di < 0 && dj == 0)
     return NW;
