@@ -25,7 +25,7 @@ vertex_t p_prev_pos;
 vertex_t op_pos;
 int p_walls_left;
 int objective_left[NUM_PLAYERS];
-int objective_reached[NUM_PLAYERS][p_graph.num_objectives]; /* Track which objectives have been reached */
+int objective_reached[NUM_PLAYERS][100]; /* Track which objectives have been reached */
 char const* get_player_name() { return p_name; }
 
 void initialize(unsigned int player_id, struct graph_t* graph) {
@@ -443,7 +443,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   for (unsigned int i = 0; i < p_graph.num_objectives; i++) {
     if (!objective_reached[p_id][i] && next_move == p_graph.objectives[i]) {
       objective_reached[p_id][i] = 1;
-      objective_left--;
+      objective_left[p_id]--;
     }
   }
   p_prev_pos = p_pos;
