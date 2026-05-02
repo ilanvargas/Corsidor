@@ -24,7 +24,8 @@ vertex_t p_pos;
 vertex_t p_prev_pos;
 vertex_t op_pos;
 int p_walls_left;
-
+int objective_left[NUM_PLAYERS];
+int objective_reached[NUM_PLAYERS][p_graph.num_objectives]; /* Track which objectives have been reached */
 char const* get_player_name() { return p_name; }
 
 void initialize(unsigned int player_id, struct graph_t* graph) {
@@ -34,6 +35,38 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
   p_prev_pos = INVALID_VERTEX;
   op_pos = p_graph.start[1 - p_id];
   p_walls_left = graph->num_edges / 16;
+  objective_left[p_id] = graph->num_objectives;
+  objective_left[1 - p_id] = graph->num_objectives;
+
+  /* Initialize objective tracking */
+  for (unsigned int i = 0; i < graph->num_objectives; i++) {
+    objective_reached[p_id][i] = 0;
+    objective_reached[1 - p_id][i] = 0;
+  }
+}
+
+/*
+* Check if a target is reachable with acceleration.
+* Returns 1 if reachable, 0 otherwise.
+*/
+static int reachable_with_acceleration(vertex_t pos,
+                                                 vertex_t next_step,
+                                                 vertex_t prev_pos,
+                                                 vertex_t op_pos) {
+  enum dir_t dir_go;
+  if (IS_ADJACENT(&p_graph, pos, next_step) && !IS_WALL(&p_graph, pos, next_step)) {
+    return 1;
+  }
+                                                
+  int dir_diff = path_dir_diff(&p_graph, prev_pos, pos, next_step, &dir_go);
+                                        
+  if (dir_diff == 0) {
+    return is_straigh_clear_path(&p_graph, next_step, pos, op_pos, dir_go, MAX_DIST);
+  }
+  if (dir_diff == 1) {
+    return is_straigh_clear_path(&p_graph, next_step, pos, op_pos, dir_go, MAX_DIST_60_DEG);
+  }
+  return 0;
 }
 
 static void djikstra_with_prev(struct graph_t* graph,
@@ -72,7 +105,7 @@ static void djikstra_with_prev(struct graph_t* graph,
 
     /* Relax edges */
     for (unsigned int v = 0; v < n; v++) {
-      if (IS_ADJACENT(graph, u, v) && !IS_WALL(graph, u, v)) {
+      if (reachable_with_acceleration(u, v, prev[u], op_pos) && !IS_WALL(graph, u, v)) {
         if (dist[u] + 1 < dist[v]) {
           dist[v] = dist[u] + 1;
           prev[v] = u;
@@ -100,45 +133,22 @@ unsigned int* djikstra(struct graph_t* graph, vertex_t source) {
 }
 
 /*
-* Check if an objective is reachable with acceleration.
-* Returns 1 if reachable, 0 otherwise.
-*/
-static int objective_reachable_with_acceleration(vertex_t pos,
-                                                 vertex_t objective,
-                                                 vertex_t prev_pos,
-                                                 vertex_t op_pos) {
-  enum dir_t dir_go;
-  if (IS_ADJACENT(&p_graph, pos, objective) && !IS_WALL(&p_graph, pos, objective)) {
-    return 1;
-  }
-                                                
-  int dir_diff = path_dir_diff(&p_graph, prev_pos, pos, objective, &dir_go);
-                                        
-  if (dir_diff == 0) {
-    return is_straigh_clear_path(&p_graph, objective, pos, op_pos, dir_go, MAX_DIST);
-  }
-  if (dir_diff == 1) {
-    return is_straigh_clear_path(&p_graph, objective, pos, op_pos, dir_go, MAX_DIST_60_DEG);
-  }
-  return 0;
-}
-
-/*
 * Get the closest objective to the current position, and its distance.
 * returns the distance, and sets *next_objective to the closest objective.
+* Only considers objectives that have not been reached yet.
 */
 static unsigned int get_closest_objective(vertex_t pos,
                                             vertex_t* next_objective) {
   unsigned int* dist = djikstra(&p_graph, pos);
   unsigned int best_dist = UINT_MAX;
-  vertex_t best_objective = p_graph.objectives[0];
+  vertex_t best_objective = UINT_MAX;
 
   for (unsigned int i = 0; i < p_graph.num_objectives; i++) {
+    if (objective_reached[p_id][i]) {
+      continue; /* Skip already reached objectives */
+    }
     vertex_t objective = p_graph.objectives[i];
     unsigned int effective_dist = dist[objective];
-    if (objective_reachable_with_acceleration(pos, objective, p_prev_pos, op_pos)) {
-      effective_dist = 1;
-    }
     if (effective_dist < best_dist) {
       best_dist = effective_dist;
       best_objective = objective;
@@ -150,7 +160,10 @@ static unsigned int get_closest_objective(vertex_t pos,
   return best_dist;
 }
 
-static unsigned int get_next_objective(vertex_t pos) {
+static unsigned int get_next_objective(vertex_t pos, int player_id) {
+  if (objective_left[player_id] == 0) {
+    return p_graph.start[player_id]; // All objectives reached, return starting position as next objective
+  }
   vertex_t objective = UINT_MAX;
   get_closest_objective(pos, &objective);
   return objective;
@@ -325,7 +338,6 @@ static void find_best_wall(vertex_t opp_pos,
     return;
   }
   }
-
   /*
   * For each edge in the shortest path from opp_pos to opp_checkpoint,
   *  we check if placing a wall on that edge (in either direction) would increase the opponent's distance to their checkpoint. 
@@ -334,7 +346,6 @@ static void find_best_wall(vertex_t opp_pos,
   for (unsigned int i = 0; i + 1 < path_len; i++) {
     vertex_t u = path[i];
     vertex_t v = path[i + 1];
-    struct edge_t candidate[2];
 
     if (find_wall_candidate_for_edge(u, v, candidate)) {
       unsigned int gain = evaluate_wall_gain(candidate, opp_pos,
@@ -356,5 +367,87 @@ static void find_best_wall(vertex_t opp_pos,
     }
   }
 }
+
+static vertex_t get_next_move_vertex(vertex_t current_pos,
+                                     vertex_t target_pos,
+                                     vertex_t opp_pos) {
+  vertex_t path[p_graph.num_vertices];
+  unsigned int path_len = 0;
+
+  if (!build_shortest_path(current_pos, target_pos, path, &path_len)) { // No path exists, should not happen!!
+    return UINT_MAX;
+  }
+  build_shortest_path(current_pos, target_pos, path, &path_len);
+  return path[0];
+}
+
+
+struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
+  if (previous_moves[1 - p_id].t == MOVE || previous_moves[1 - p_id].t == JUMP) {
+    op_pos = previous_moves[1 - p_id].m;
+  }
+
+
+  if (previous_moves[p_id].t == NO_TYPE) {
+    return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos + 1};
+  }
+
+
+  vertex_t my_checkpoint = get_next_objective(p_pos, p_id);
+  vertex_t opp_checkpoint = get_next_objective(op_pos, 1 - p_id);
+
+
+  unsigned int* dist_me = dijkstra(&p_graph, p_pos);
+  unsigned int* dist_opp = dijkstra(&p_graph, op_pos);
+
+
+  unsigned int d_me = dist_me[my_checkpoint];
+  unsigned int d_opp = dist_opp[opp_checkpoint];
+  free(dist_me);
+  free(dist_opp);
+
+
+  struct edge_t best_wall[2];
+  unsigned int wall_gain = 0;
+  find_best_wall(op_pos, opp_checkpoint, best_wall, &wall_gain);
+
+
+
+  int should_place_wall = 0;
+  if (p_walls_left > 0 && best_wall[0].fr != UINT_MAX) { 
+    if (wall_gain >= 4) {
+      should_place_wall = 1;
+    } else if (wall_gain >= 2 && d_opp <= 2) {
+      should_place_wall = 1;
+    }
+  }
+
+
+  if (should_place_wall) { // Place the wall if it provides a significant gain or if the opponent is very close to their checkpoint
+    p_walls_left--;
+    return (struct move_t){.c = p_id,
+                           .t = WALL,
+                           .e = {best_wall[0], best_wall[1]}};
+  }
+
+
+  vertex_t next_move = get_next_move_vertex(p_pos, my_checkpoint, op_pos);
+  if (next_move == UINT_MAX) { // No path to checkpoint, should not happen!!
+    return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos}; 
+  }
+
+  /* Check if we reached an objective */
+  for (unsigned int i = 0; i < p_graph.num_objectives; i++) {
+    if (!objective_reached[i] && next_move == p_graph.objectives[i]) {
+      objective_reached[i] = 1;
+      objective_left--;
+    }
+  }
+  p_prev_pos = p_pos;
+  p_pos = next_move;
+  return (struct move_t){.c = p_id, .t = MOVE, .m = next_move};
+}
+
+
 void finalize() { return; }
 
