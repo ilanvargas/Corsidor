@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "move_check.h"
+#include "graph_impl.h"
 #include "player.h"
 
 int path_dir_diff(struct graph_t* graph,
