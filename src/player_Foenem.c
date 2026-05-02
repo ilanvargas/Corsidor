@@ -389,13 +389,13 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   if (previous_moves[1 - p_id].t == MOVE || previous_moves[1 - p_id].t == JUMP) {
     op_pos = previous_moves[1 - p_id].m;
   }
-
+/*
 
   if (previous_moves[p_id].t == NO_TYPE) {
     return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos + 1};
   }
 
-
+*/
   vertex_t my_checkpoint = get_next_objective(p_pos, p_id);
   vertex_t opp_checkpoint = get_next_objective(op_pos, 1 - p_id);
 
@@ -452,5 +452,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 }
 
 
-void finalize() { return; }
+void finalize() { 
+  
+  return; }
 
