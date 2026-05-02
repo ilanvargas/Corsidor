@@ -171,7 +171,7 @@ static unsigned int get_next_objective(vertex_t pos,
 */
 static int build_shortest_path(vertex_t source,
                                vertex_t target,
-                               vertex_t op_pos,
+                               vertex_t opp_pos,
                                vertex_t* path,
                                unsigned int* path_len) {
   unsigned int n = p_graph.num_vertices;
@@ -317,7 +317,7 @@ static void find_best_wall(vertex_t pos,
   best_wall[1].fr = UINT_MAX;
   best_wall[1].to = UINT_MAX;
 
-  int path_exists = build_shortest_path(opp_pos, opp_checkpoint, path, &path_len);
+  int path_exists = build_shortest_path(opp_pos, opp_checkpoint, pos, path, &path_len);
   if (!path_exists) { // No path exists, no wall can be placed to increase distance
     return;
   }
@@ -373,14 +373,15 @@ static void find_best_wall(vertex_t pos,
 }
 
 static vertex_t get_next_move_vertex(vertex_t current_pos,
+                                     vertex_t opp_pos,
                                      vertex_t target_pos) {
   vertex_t path[p_graph.num_vertices];
   unsigned int path_len = 0;
 
-  if (!build_shortest_path(current_pos, target_pos, path, &path_len)) { // No path exists, should not happen!!
+  if (!build_shortest_path(current_pos, target_pos, opp_pos, path, &path_len)) { // No path exists, should not happen!!
     return UINT_MAX;
   }
-  build_shortest_path(current_pos, target_pos, path, &path_len);
+  build_shortest_path(current_pos, target_pos, opp_pos, path, &path_len);
   return path[0];
 }
 
@@ -396,8 +397,8 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   }
 
 */
-  vertex_t my_checkpoint = get_next_objective(p_pos, p_id);
-  vertex_t opp_checkpoint = get_next_objective(op_pos, 1 - p_id);
+  vertex_t my_checkpoint = get_next_objective(p_pos, op_pos, p_id);
+  vertex_t opp_checkpoint = get_next_objective(op_pos, p_pos, 1 - p_id);
 
 
   unsigned int* dist_me = djikstra(&p_graph, p_pos, op_pos);
@@ -434,7 +435,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   }
 
 
-  vertex_t next_move = get_next_move_vertex(p_pos, my_checkpoint);
+  vertex_t next_move = get_next_move_vertex(p_pos, op_pos, my_checkpoint);
   if (next_move == UINT_MAX) { // No path to checkpoint, should not happen!!
     return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos}; 
   }
