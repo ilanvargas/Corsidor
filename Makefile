@@ -20,10 +20,10 @@ server: src/graph_impl.o src/move_valid.o src/waterloo.o src/main.c
 
 client: $(CLIENTS)
 
-scarecrow.so: src/graph_impl.o src/player_Scarecrow.o src/move_valid.o
+scarecrow.so: src/player_Scarecrow.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
-chickenleg.so: src/graph_impl.o src/player_Scarecrow.o src/move_valid.o
+chickenleg.so: src/player_Scarecrow.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 foenem.so: src/graph_impl.o src/player_Foenem.o src/move_valid.o

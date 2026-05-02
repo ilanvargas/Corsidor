@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "move_check.h"
-#include "graph_impl.h"
 #include "player.h"
 
 int path_dir_diff(struct graph_t* graph,
@@ -17,6 +16,12 @@ int is_straigh_clear_path(struct graph_t* graph,
                           vertex_t op,
                           enum dir_t dir_go,
                           int max_dist);
+
+int move_valid(struct graph_t* graph,
+               vertex_t to,
+               vertex_t fr,
+               vertex_t op,
+               vertex_t prev);
 
 char const* p_name = "Foenem";
 unsigned int p_id;
@@ -47,32 +52,20 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 }
 
 /*
-* Check if a target is reachable with acceleration.
+* Check if a target is reachable according to move validation rules.
 * Returns 1 if reachable, 0 otherwise.
 */
-static int reachable_with_acceleration(vertex_t pos,
-                                                 vertex_t next_step,
-                                                 vertex_t prev_pos,
-                                                 vertex_t op_pos) {
-  enum dir_t dir_go;
-  if (IS_ADJACENT(&p_graph, pos, next_step) && !IS_WALL(&p_graph, pos, next_step)) {
-    return 1;
-  }
-                                                
-  int dir_diff = path_dir_diff(&p_graph, prev_pos, pos, next_step, &dir_go);
-                                        
-  if (dir_diff == 0) {
-    return is_straigh_clear_path(&p_graph, next_step, pos, op_pos, dir_go, MAX_DIST);
-  }
-  if (dir_diff == 1) {
-    return is_straigh_clear_path(&p_graph, next_step, pos, op_pos, dir_go, MAX_DIST_60_DEG);
-  }
-  return 0;
+static int is_move_reachable(vertex_t pos,
+                             vertex_t next_step,
+                             vertex_t prev_pos,
+                             vertex_t op_pos) {
+  return move_valid(&p_graph, next_step, pos, op_pos, prev_pos);
 }
 
 static void djikstra_with_prev(struct graph_t* graph,
                                vertex_t source,
                                unsigned int* dist,
+                               vertex_t op_pos,
                                vertex_t* prev) {
   unsigned int n = graph->t->size1;
 
@@ -106,7 +99,7 @@ static void djikstra_with_prev(struct graph_t* graph,
 
     /* Relax edges */
     for (unsigned int v = 0; v < n; v++) {
-      if (reachable_with_acceleration(u, v, prev[u], op_pos) && !IS_WALL(graph, u, v)) {
+      if (is_move_reachable(u, v, prev[u], op_pos) && !IS_WALL(graph, u, v)) {
         if (dist[u] + 1 < dist[v]) {
           dist[v] = dist[u] + 1;
           prev[v] = u;
@@ -123,12 +116,12 @@ static void djikstra_with_prev(struct graph_t* graph,
 * Returns an array of distances, where dist[i] is the distance from source to vertex i. 
 * If a vertex is unreachable from source, its distance will be UINT_MAX.
 */
-unsigned int* djikstra(struct graph_t* graph, vertex_t source) {
+unsigned int* djikstra(struct graph_t* graph, vertex_t source, vertex_t op_pos) {
   unsigned int n = graph->t->size1;
   unsigned int* dist = malloc(n * sizeof(unsigned int));
   vertex_t* prev = malloc(n * sizeof(vertex_t));
 
-  djikstra_with_prev(graph, source, dist, prev);
+  djikstra_with_prev(graph, source, dist, op_pos, prev);
   free(prev);
   return dist;
 }
@@ -139,8 +132,9 @@ unsigned int* djikstra(struct graph_t* graph, vertex_t source) {
 * Only considers objectives that have not been reached yet.
 */
 static unsigned int get_closest_objective(vertex_t pos,
+                                          vertex_t op_pos,
                                             vertex_t* next_objective) {
-  unsigned int* dist = djikstra(&p_graph, pos);
+  unsigned int* dist = djikstra(&p_graph, pos, op_pos);
   unsigned int best_dist = UINT_MAX;
   vertex_t best_objective = UINT_MAX;
 
@@ -161,12 +155,14 @@ static unsigned int get_closest_objective(vertex_t pos,
   return best_dist;
 }
 
-static unsigned int get_next_objective(vertex_t pos, int player_id) {
+static unsigned int get_next_objective(vertex_t pos,
+                                       vertex_t op_pos,
+                                       int player_id) {
   if (objective_left[player_id] == 0) {
     return p_graph.start[player_id]; // All objectives reached, return starting position as next objective
   }
   vertex_t objective = UINT_MAX;
-  get_closest_objective(pos, &objective);
+  get_closest_objective(pos, op_pos, &objective);
   return objective;
 }
 /* Build the shortest path from source to target 
@@ -175,13 +171,14 @@ static unsigned int get_next_objective(vertex_t pos, int player_id) {
 */
 static int build_shortest_path(vertex_t source,
                                vertex_t target,
+                               vertex_t op_pos,
                                vertex_t* path,
                                unsigned int* path_len) {
   unsigned int n = p_graph.num_vertices;
   unsigned int* dist = malloc(n * sizeof(unsigned int));
   vertex_t* prev = malloc(n * sizeof(vertex_t));
   
-  djikstra_with_prev(&p_graph, source, dist, prev);
+  djikstra_with_prev(&p_graph, source, dist, op_pos, prev);
 
   
   if (dist[target] == UINT_MAX) { // No path exists (should not happen in a valid game state)
@@ -240,6 +237,7 @@ static void set_wall_mask(struct graph_t* graph,
 * or UINT_MAX if it becomes impossible for the opponent to reach their checkpoint.
 */
 static unsigned int evaluate_wall_gain(struct edge_t wall[2],
+                                       vertex_t pos,
                                        vertex_t opp_pos,
                                        vertex_t opp_checkpoint,
                                        unsigned int original_dist) {
@@ -249,7 +247,7 @@ static unsigned int evaluate_wall_gain(struct edge_t wall[2],
   set_wall_mask(&p_graph, wall[1].fr, wall[1].to, 1);
   set_wall_mask(&p_graph, wall[1].to, wall[1].fr, 1);
 
-  unsigned int* dist = djikstra(&p_graph, opp_pos);
+  unsigned int* dist = djikstra(&p_graph, opp_pos, pos);
   unsigned int new_dist = dist[opp_checkpoint];
   free(dist);
 
@@ -301,14 +299,15 @@ static int find_wall_candidate_for_edge(vertex_t source,
 * Find the best wall to place to increase the opponent's distance to their closest objective.
 * best_wall will contain the edges to place the wall on, and gain_ptr will contain the gain in distance for the opponent.
 */
-static void find_best_wall(vertex_t opp_pos,
+static void find_best_wall(vertex_t pos,
+                           vertex_t opp_pos,
                            vertex_t opp_checkpoint,
                            struct edge_t best_wall[2],
                            unsigned int* gain_ptr) {
   unsigned int n = p_graph.t->size1;
   vertex_t path[n];
   unsigned int path_len = 0;
-  unsigned int* opp_dist = djikstra(&p_graph, opp_pos);
+  unsigned int* opp_dist = djikstra(&p_graph, opp_pos, pos);
   unsigned int original_dist = opp_dist[opp_checkpoint];
   free(opp_dist);
 
@@ -330,7 +329,7 @@ static void find_best_wall(vertex_t opp_pos,
   struct edge_t candidate[2];
   find_wall_candidate_for_edge(opp_pos, opp_checkpoint, candidate);
   
-  unsigned int gain = evaluate_wall_gain(candidate, opp_pos,
+  unsigned int gain = evaluate_wall_gain(candidate, pos, opp_pos,
                     opp_checkpoint, original_dist);  
   if (gain != UINT_MAX) {
     *gain_ptr = gain;
@@ -353,7 +352,7 @@ static void find_best_wall(vertex_t opp_pos,
     struct edge_t candidate[2];
     int cond = find_wall_candidate_for_edge(u, v, candidate);
     if (cond) {
-      unsigned int gain = evaluate_wall_gain(candidate, opp_pos,
+      unsigned int gain = evaluate_wall_gain(candidate, pos, opp_pos,
                                             opp_checkpoint, original_dist);
       if (gain > *gain_ptr) {
         *gain_ptr = gain;
@@ -362,7 +361,7 @@ static void find_best_wall(vertex_t opp_pos,
       }
     }
     if (find_wall_candidate_for_edge(v, u, candidate)) {
-      unsigned int gain = evaluate_wall_gain(candidate, opp_pos,
+      unsigned int gain = evaluate_wall_gain(candidate, pos, opp_pos,
                                             opp_checkpoint, original_dist);
       if (gain > *gain_ptr) {
         *gain_ptr = gain;
@@ -401,8 +400,8 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   vertex_t opp_checkpoint = get_next_objective(op_pos, 1 - p_id);
 
 
-  unsigned int* dist_me = djikstra(&p_graph, p_pos);
-  unsigned int* dist_opp = djikstra(&p_graph, op_pos);
+  unsigned int* dist_me = djikstra(&p_graph, p_pos, op_pos);
+  unsigned int* dist_opp = djikstra(&p_graph, op_pos, p_pos);
 
 
   //unsigned int d_me = dist_me[my_checkpoint];
@@ -413,7 +412,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 
   struct edge_t best_wall[2];
   unsigned int wall_gain = 0;
-  find_best_wall(op_pos, opp_checkpoint, best_wall, &wall_gain);
+  find_best_wall(p_pos, op_pos, opp_checkpoint, best_wall, &wall_gain);
 
 
 
