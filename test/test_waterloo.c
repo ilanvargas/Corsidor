@@ -92,6 +92,11 @@ void test_wall_waterloo() {
   struct edge_t wall[2] = {{.fr = 10, .to = 11}, {.fr = 10, .to = 19}};
   build_wall(graph, wall);
 
+  struct edge_t wall1[2] = {{.fr = 59, .to = 49}, {.fr = 59, .to = 58}};
+  struct edge_t wall2[2] = {{.fr = 59, .to = 69}, {.fr = 10, .to = 68}};
+  build_wall(graph, wall1);
+  build_wall(graph, wall2);
+
   size_t wall_test_len = 3;
   struct test_t wall_test[] = {
       {.title = "WALL on existing wall same edges",
@@ -105,6 +110,12 @@ void test_wall_waterloo() {
                 .c = BLACK,
                 .e = {{.fr = 10, .to = 11}, {.fr = 10, .to = 2}}},
        .p_pos = {0, 80},
+       .sol = 1},
+      {.title = "WALL blocking oponent",
+       .move = {.t = WALL,
+                .c = BLACK,
+                .e = {{.fr = 59, .to = 50}, {.fr = 59, .to = 60}}},
+       .p_pos = {0, 59},
        .sol = 1},
       {.title = "WALL on free edges",
        .move = {.t = WALL,
