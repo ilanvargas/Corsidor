@@ -8,7 +8,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 				-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = scarecrow.so chickenleg.so
+CLIENTS = scarecrow.so foenem.so #chickenleg.so
 TESTS = test_move_valid test_waterloo
 
 all: build
@@ -24,6 +24,9 @@ scarecrow.so: src/player_Scarecrow.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 chickenleg.so: src/player_Scarecrow.o src/move_valid.o
+	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
+
+foenem.so: src/graph_impl.o src/player_Foenem.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 dot_test: test_graph_impl

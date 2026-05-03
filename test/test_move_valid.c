@@ -20,23 +20,23 @@ void test_helper_path_dir_diff() {
 
   printf("\t Straight: ");
   CMP_INT(path_dir_diff(graph, 0, 1, 2, &dir_go), 0)
-  CMP_INT(dir_go, W)    
+  CMP_INT(dir_go, W)
   CMP_INT(path_dir_diff(graph, 1, 28, 73, &dir_go), 0)
-  CMP_INT(dir_go, SE)   
+  CMP_INT(dir_go, SE)
   printf("\n");
 
   printf("\t 60 degrees: ");
   CMP_INT(path_dir_diff(graph, 0, 1, 11, &dir_go), 1)
-  CMP_INT(dir_go, SW)     
+  CMP_INT(dir_go, SW)
   CMP_INT(path_dir_diff(graph, 30, 20, 19, &dir_go), 1)
   CMP_INT(dir_go, E)
   printf("\n");
 
   printf("\t More angular: ");
   CMP_INT(path_dir_diff(graph, 0, 1, 0, &dir_go), 3)
-  CMP_INT(dir_go, E)       
+  CMP_INT(dir_go, E)
   CMP_INT(path_dir_diff(graph, 1, 28, 19, &dir_go), 3)
-  CMP_INT(dir_go, NW)    
+  CMP_INT(dir_go, NW)
   printf("\n");
 }
 
