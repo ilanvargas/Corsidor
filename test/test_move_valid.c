@@ -64,7 +64,7 @@ void exec_tests(struct test_t* tests, size_t tests_len, struct graph_t* graph) {
 void test_move_move_is_valid() {
   struct graph_t* graph = graph_init(9, PARALLELOGRAM);
 
-  size_t move_test_len = 15;
+  size_t move_test_len = 16;
   struct test_t move_test[] = {
       {.title = "BLACK dist 1 dir W",
        .move = {.t = MOVE, .c = BLACK, .m = 1},
@@ -122,6 +122,11 @@ void test_move_move_is_valid() {
        .sol = 0},
       {.title = "BLACK previous W, same dir dist 4",
        .move = {.t = MOVE, .c = BLACK, .m = 5},
+       .p_pos = {1, 80},
+       .p_prev_pos = {0, 80},
+       .sol = 0},
+      {.title = "BLACK same dir no straight line",
+       .move = {.t = MOVE, .c = BLACK, .m = 11},
        .p_pos = {1, 80},
        .p_prev_pos = {0, 80},
        .sol = 0},

@@ -8,7 +8,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 				-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = scarecrow.so foenem.so #chickenleg.so
+CLIENTS = scarecrow.so foenem.so chickenleg.so
 TESTS = test_move_valid test_waterloo
 
 all: build
@@ -32,7 +32,8 @@ foenem.so: src/graph_impl.o src/player_Foenem.o src/move_valid.o
 dot_test: test_graph_impl
 	./test_graph_impl
 	$(DOT) -Tpdf test1.dot -o test1.pdf
-	$(DOT) -Tpdf parallelogram_test.dot -o parallelogram_test.pdf
+	$(DOT) -Tpdf parallelogram_m5_test.dot -o parallelogram_m5_test.pdf
+	$(DOT) -Tpdf parallelogram_m9_test.dot -o parallelogram_m9_test.pdf
 	$(DOT) -Tpdf triangular_test.dot -o triangular_test.pdf
 
 test: build_tests

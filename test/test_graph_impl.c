@@ -33,12 +33,19 @@ void test_graph_show() {
 }
 
 void test_graph_init() {
-  printf("Test for parrallelogram graph\n");
+  printf("Test for parrallelogram graph m=9\n");
 
-  struct graph_t* g_parallelogram = graph_init(9, PARALLELOGRAM);
-  graph_show(g_parallelogram, "parallelogram_test.dot");
-  fprintf(stderr, "File created as parallelogram_test.dot\n");
-  graph_free(g_parallelogram);
+  struct graph_t* g_parallelogram_m9 = graph_init(9, PARALLELOGRAM);
+  graph_show(g_parallelogram_m9, "parallelogram_m9_test.dot");
+  fprintf(stderr, "File created as parallelogram_m9_test.dot\n");
+  graph_free(g_parallelogram_m9);
+
+  printf("Test for parrallelogram graph m=5\n");
+
+  struct graph_t* g_parallelogram_m5 = graph_init(5, PARALLELOGRAM);
+  graph_show(g_parallelogram_m5, "parallelogram_m5_test.dot");
+  fprintf(stderr, "File created as parallelogram_m5_test.dot\n");
+  graph_free(g_parallelogram_m5);
 
   printf("Test for triangular graph\n");
 

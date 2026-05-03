@@ -70,7 +70,7 @@ int is_end_game(struct graph_t* graph,
   // if a player visited all objectives
   for (int i = 0; i < NUM_PLAYERS; i++) {
     if (p_num_visited[i] >= graph->num_objectives) {
-      printf("%s visited all objectives and won game. Congratulations",
+      printf("%s visited all objectives and won game. Congratulations\n",
              (i == 0) ? "BLACK" : "WHITE");
       return 1;
     }
@@ -178,12 +178,12 @@ int main(int argc, char* argv[]) {
     // move application
     switch (move.t) {
       case MOVE:
-        vertex_t prev_movem = move.m;
+        vertex_t tmp_movem = move.m;
         if (convert_waterloo(graph, &move, p_pos))
           printf(
               "%s tried to MOVE to %d but made waterloo move. Player moves to "
               "%d\n",
-              color_str, prev_movem, move.m);
+              color_str, tmp_movem, move.m);
         else
           printf("%s moves to %d\n", color_str, move.m);
 
@@ -194,11 +194,12 @@ int main(int argc, char* argv[]) {
 
         break;
       case JUMP:
+        vertex_t tmp_jumpm = move.m;
         if (convert_waterloo(graph, &move, p_pos))
           printf(
               "%s tried to JUMP to %d but made waterloo move. Player: stays in "
               "place\n",
-              color_str, move.m);
+              color_str, tmp_jumpm);
         else {
           printf("%s JUMPS to %d\n", color_str, move.m);
 
@@ -208,12 +209,13 @@ int main(int argc, char* argv[]) {
 
         break;
       case WALL:
+        struct edge_t tmp_e0 = move.e[0];
+        struct edge_t tmp_e1 = move.e[1];
         if (convert_waterloo(graph, &move, p_pos))
           printf(
               "%s tried to put WALL on edges (%d, %d) and (%d, %d) but made "
               "waterloo move. No wall is placed\n",
-              color_str, move.e[0].fr, move.e[0].to, move.e[1].fr,
-              move.e[1].to);
+              color_str, tmp_e0.fr, tmp_e0.to, tmp_e1.fr, tmp_e1.to);
         else {
           printf("%s put WALL on edges (%d, %d) and (%d, %d)\n", color_str,
                  move.e[0].fr, move.e[0].to, move.e[1].fr, move.e[1].to);
