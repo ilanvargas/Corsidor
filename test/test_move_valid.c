@@ -126,7 +126,7 @@ void test_move_move_is_valid() {
        .p_prev_pos = {0, 80},
        .sol = 0},
       {.title = "BLACK same dir no straight line",
-       .move = {.t = MOVE, .c = BLACK, .m = 11},
+       .move = {.t = MOVE, .c = BLACK, .m = 12},
        .p_pos = {1, 80},
        .p_prev_pos = {0, 80},
        .sol = 0},
