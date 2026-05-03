@@ -128,10 +128,12 @@ int main(int argc, char* argv[]) {
   int p_is_visited[NUM_PLAYERS][graph->num_objectives];
   memset(p_is_visited, 0, sizeof(p_is_visited));
 
+  struct graph_t* player_graphs[NUM_PLAYERS];
   for (int i = 0; i < NUM_PLAYERS; i++) {
     // Each player has their own graph so they can not modify it or see wall
     // placement
-    players[i].initialize(i, graph_init(m, type));
+    player_graphs[i] = graph_init(m, type);
+    players[i].initialize(i, player_graphs[i]);
     printf("The player %s join the game as %s\n", players[i].get_player_name(),
            i == 0 ? "BLACK" : "WHITE");
   }
@@ -238,6 +240,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < NUM_PLAYERS; i++) {
     players[i].finalize();
     dlclose(players[i].handle);
+    graph_free(player_graphs[i]);
   }
 
   graph_free(graph);

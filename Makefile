@@ -8,7 +8,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 				-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = scarecrow.so foenem.so chickenleg.so
+CLIENTS = scarecrow.so foenem.so #chickenleg.so
 TESTS = test_move_valid test_waterloo
 
 all: build

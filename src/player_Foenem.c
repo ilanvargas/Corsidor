@@ -472,6 +472,5 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 }
 
 void finalize() {
-  graph_free(&p_graph);
   return;
 }
