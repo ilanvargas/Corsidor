@@ -382,6 +382,9 @@ static vertex_t get_next_move_vertex(vertex_t current_pos,
     return UINT_MAX;
   }
   build_shortest_path(current_pos, target_pos, opp_pos, path, &path_len);
+  if (path_len == 0) { // Already at target
+    return current_pos+1;
+  }
   return path[0];
 }
 
@@ -429,6 +432,10 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 
   if (should_place_wall) { // Place the wall if it provides a significant gain or if the opponent is very close to their checkpoint
     p_walls_left--;
+    set_wall_mask(&p_graph, best_wall[0].fr, best_wall[0].to, 1);
+    set_wall_mask(&p_graph, best_wall[0].to, best_wall[0].fr, 1);
+    set_wall_mask(&p_graph, best_wall[1].fr, best_wall[1].to, 1);
+    set_wall_mask(&p_graph, best_wall[1].to, best_wall[1].fr, 1);
     return (struct move_t){.c = p_id,
                            .t = WALL,
                            .e = {best_wall[0], best_wall[1]}};
@@ -447,6 +454,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
       objective_left[p_id]--;
     }
   }
+  
   p_prev_pos = p_pos;
   p_pos = next_move;
   return (struct move_t){.c = p_id, .t = MOVE, .m = next_move};
