@@ -26,14 +26,12 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
   is_visited = calloc(p_graph->t->size1, sizeof(int));
 }
 
-#include <stdio.h>
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   if (previous_moves[1 - p_id].t == MOVE || previous_moves[1 - p_id].t == JUMP)
     op_pos = previous_moves[1 - p_id].m;
 
   if (previous_moves[p_id].t == WATERLOO)
     p_pos = previous_moves[p_id].m;
-  printf("prev %d m %d\n", previous_moves[p_id].m, p_pos);
 
   unsigned int u = 0;
   for (unsigned int v = 0; v < p_graph->t->size1; v++) {
