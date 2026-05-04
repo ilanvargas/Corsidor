@@ -38,6 +38,8 @@ void test_helper_path_dir_diff() {
   CMP_INT(path_dir_diff(graph, 1, 28, 19, &dir_go), 3)
   CMP_INT(dir_go, NW)
   printf("\n");
+
+  graph_free(graph);
 }
 
 // --- Tests main functions ---
