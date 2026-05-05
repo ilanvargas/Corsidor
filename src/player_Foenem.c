@@ -60,14 +60,14 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
  * Check if a target is reachable according to move validation rules.
  * Returns 1 if reachable, 0 otherwise.
  */
-static int is_move_reachable(vertex_t pos,
+int is_move_reachable(vertex_t pos,
                              vertex_t next_step,
                              vertex_t prev_pos,
                              vertex_t op_pos) {
   return move_valid(&p_graph, next_step, pos, op_pos, prev_pos);
 }
 
-static void djikstra_with_prev(struct graph_t* graph,
+void djikstra_with_prev(struct graph_t* graph,
                                vertex_t source,
                                unsigned int* dist,
                                vertex_t op_pos,
@@ -180,7 +180,6 @@ static unsigned int get_next_objective(vertex_t pos,
  */
 static int build_shortest_path(vertex_t source,
                                vertex_t target,
-                               vertex_t opp_pos,
                                vertex_t* path,
                                unsigned int* path_len) {
   unsigned int n = p_graph.num_vertices;
@@ -332,7 +331,7 @@ static void find_best_wall(vertex_t pos,
   best_wall[1].to = UINT_MAX;
 
   int path_exists =
-      build_shortest_path(opp_pos, opp_checkpoint, pos, path, &path_len);
+      build_shortest_path(opp_pos, opp_checkpoint, path, &path_len);
   if (!path_exists) {  // No path exists, no wall can be placed to increase
                        // distance
     return;
@@ -391,16 +390,15 @@ static void find_best_wall(vertex_t pos,
 }
 
 static vertex_t get_next_move_vertex(vertex_t current_pos,
-                                     vertex_t opp_pos,
                                      vertex_t target_pos) {
   vertex_t path[p_graph.num_vertices];
   unsigned int path_len = 0;
 
-  if (!build_shortest_path(current_pos, target_pos, opp_pos, path,
+  if (!build_shortest_path(current_pos, target_pos, path,
                            &path_len)) {  // No path exists, should not happen!!
     return UINT_MAX;
   }
-  build_shortest_path(current_pos, target_pos, opp_pos, path, &path_len);
+  build_shortest_path(current_pos, target_pos, path, &path_len);
   if (path_len == 0) {  // Already at target
     return current_pos + 1;
   }
@@ -465,7 +463,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
         .c = p_id, .t = WALL, .e = {best_wall[0], best_wall[1]}};
   }
 
-  vertex_t next_move = get_next_move_vertex(p_pos, op_pos, my_checkpoint);
+  vertex_t next_move = get_next_move_vertex(p_pos, my_checkpoint);
   if (next_move == UINT_MAX) {  // No path to checkpoint, should not happen!!
     return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos};
   }
