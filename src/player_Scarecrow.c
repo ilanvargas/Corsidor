@@ -19,10 +19,23 @@ char const* get_player_name() {
 
 void initialize(unsigned int player_id, struct graph_t* graph) {
   p_id = player_id;
-  p_graph = graph;
+
+  // copy graph
+  p_graph = malloc(sizeof(struct graph_t));
+  p_graph->type = graph->type;
+  p_graph->num_vertices = graph->num_vertices;
+  p_graph->num_edges = graph->num_edges;
+  p_graph->num_objectives = graph->num_objectives;
+  p_graph->t = gsl_spmatrix_uint_alloc(graph->t->size1, graph->t->size2);
+  gsl_spmatrix_uint_memcpy(p_graph->t, graph->t);
+  p_graph->objectives = malloc(graph->num_objectives * sizeof(vertex_t));
+  for (unsigned int i = 0; i < graph->num_objectives; i++)
+      p_graph->objectives[i] = graph->objectives[i];
+  for (unsigned int i = 0; i < NUM_PLAYERS; i++)
+      p_graph->start[i] = graph->start[i];
+
   p_pos = p_graph->start[p_id];
   op_pos = p_graph->start[1 - p_id];
-
   is_visited = calloc(p_graph->t->size1, sizeof(int));
 }
 
@@ -51,6 +64,10 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 
 void finalize() {
   free(is_visited);
+
+  gsl_spmatrix_uint_free(p_graph->t);
+  free(p_graph->objectives);
+  free(p_graph);
 
   return;
 }
