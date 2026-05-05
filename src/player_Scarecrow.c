@@ -35,7 +35,6 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 
   unsigned int u = 0;
   for (unsigned int v = 0; v < p_graph->t->size1; v++) {
-    printf("%d v %d - %d\n", p_pos, v, IS_ADJACENT(p_graph, p_pos, v));
     if (IS_ADJACENT(p_graph, p_pos, v) && op_pos != v) {
       u = v;
       if (is_visited[v] == 0) {
