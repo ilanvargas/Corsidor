@@ -4,14 +4,13 @@
 #include "move_check.h"
 #include <string.h>
 
-#include <stdio.h>
 /** Verify if all objectives are visited */
 int is_visited_objectives(struct graph_t* graph, int* is_visited) {
   unsigned int num_visited = 0;
   for (unsigned int i = 0; i < graph->num_objectives; i++)
     num_visited += is_visited[graph->objectives[i]];
 
-  return (num_visited == graph->num_objectives) ? 1 : 0;
+  return num_visited == graph->num_objectives;
 }
 
 /** Verify if opponent can reach objective position
@@ -25,20 +24,14 @@ int is_block_op(struct graph_t* graph, struct move_t* move, vertex_t op) {
 
   vertex_t pile[graph->t->size1];
   pile[0] = op;
-  int top = 1;
+  int top = 0;
   is_visited[op] = 1;
-  while (top > 0 && !is_visited_objectives(graph, is_visited)) {
-    vertex_t current = pile[top];
-    top--;
-    printf("top = %d curr = %d \n", top, current);
+  while (top >= 0 && !is_visited_objectives(graph, is_visited)) {
+    vertex_t current = pile[top--];
     for (unsigned int u = 0; u < graph->t->size1; u++) {
-      printf("adj s %d %d\n", current, u);
-      if (IS_ADJACENT(graph, current, u) && !is_visited[u]) {
+      if (IS_ADJACENT(graph, current, u) && !IS_WALL(graph, current, u) && !is_visited[u]) {
         is_visited[u] = 1;
-        printf("%d top = \n", top);
-        printf("%d u = \n", top);
-        pile[top] = u;
-        top++;
+        pile[++top] = u;
       }
     }
   }
@@ -62,7 +55,7 @@ int is_block_op(struct graph_t* graph, struct move_t* move, vertex_t op) {
       gsl_spmatrix_uint_get(graph->t, move->e[1].to, move->e[1].fr) &
           ~WALL_MASK);
 
-  return is_visited_objectives(graph, is_visited);
+  return !is_visited_objectives(graph, is_visited);
 }
 
 int convert_waterloo(struct graph_t* graph,
