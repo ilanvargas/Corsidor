@@ -81,6 +81,8 @@ struct graph_t* graph_init(size_t m, enum graph_type_t type) {
       n = f_init_triangular(m, graph);
       f_cond = f_cond_triangular;
       break;
+    default:
+      return NULL;
   }
 
   int dir_i[] = {0, -1, -1, 0, 1, 1, 0};
