@@ -61,7 +61,8 @@ int is_player_visit(struct graph_t* graph,
 int is_end_game(struct graph_t* graph,
                 int turn,
                 int M,
-                unsigned int p_num_visited[NUM_PLAYERS]) {
+                unsigned int p_num_visited[NUM_PLAYERS],
+                vertex_t p_pos[NUM_PLAYERS]) {
   if (M > 0 && turn > M) {
     printf("Max turn reached, game is over\n");
     return 1;
@@ -69,9 +70,12 @@ int is_end_game(struct graph_t* graph,
 
   // if a player visited all objectives
   for (int i = 0; i < NUM_PLAYERS; i++) {
-    if (p_num_visited[i] >= graph->num_objectives) {
-      printf("%s visited all objectives and won game. Congratulations\n",
-             (i == 0) ? "BLACK" : "WHITE");
+    if (p_num_visited[i] >= graph->num_objectives &&
+        p_pos[i] == graph->start[i]) {
+      printf(
+          "%s visited all objectives and won game and came back. "
+          "Congratulations!\n",
+          (i == 0) ? "BLACK" : "WHITE");
       return 1;
     }
   }
@@ -144,7 +148,7 @@ int main(int argc, char* argv[]) {
   // --- Game ---
 
   int turn = 0;
-  while (!is_end_game(graph, turn, M, p_num_visited)) {
+  while (!is_end_game(graph, turn, M, p_num_visited, p_pos)) {
     if (M > 0)
       printf("======= turn %d out of %d =======\n", turn, M);
     else
