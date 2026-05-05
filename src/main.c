@@ -237,7 +237,6 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < NUM_PLAYERS; i++) {
     players[i].finalize();
     dlclose(players[i].handle);
-    graph_free(player_graphs[i]);
   }
 
   graph_free(graph);
