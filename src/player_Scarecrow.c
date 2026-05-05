@@ -30,9 +30,9 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
   gsl_spmatrix_uint_memcpy(p_graph->t, graph->t);
   p_graph->objectives = malloc(graph->num_objectives * sizeof(vertex_t));
   for (unsigned int i = 0; i < graph->num_objectives; i++)
-      p_graph->objectives[i] = graph->objectives[i];
+    p_graph->objectives[i] = graph->objectives[i];
   for (unsigned int i = 0; i < NUM_PLAYERS; i++)
-      p_graph->start[i] = graph->start[i];
+    p_graph->start[i] = graph->start[i];
 
   p_pos = p_graph->start[p_id];
   op_pos = p_graph->start[1 - p_id];

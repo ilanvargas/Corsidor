@@ -31,8 +31,8 @@ vertex_t p_prev_pos;
 vertex_t op_pos;
 int p_walls_left;
 int objective_left[NUM_PLAYERS];
-int* objective_reached[NUM_PLAYERS]
-                    ; /* Track which objectives have been reached */
+int* objective_reached[NUM_PLAYERS]; /* Track which objectives have been reached
+                                      */
 char const* get_player_name() {
   return p_name;
 }
@@ -61,17 +61,17 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
  * Returns 1 if reachable, 0 otherwise.
  */
 int is_move_reachable(vertex_t pos,
-                             vertex_t next_step,
-                             vertex_t prev_pos,
-                             vertex_t op_pos) {
+                      vertex_t next_step,
+                      vertex_t prev_pos,
+                      vertex_t op_pos) {
   return move_valid(&p_graph, next_step, pos, op_pos, prev_pos);
 }
 
 void djikstra_with_prev(struct graph_t* graph,
-                               vertex_t source,
-                               unsigned int* dist,
-                               vertex_t op_pos,
-                               vertex_t* prev) {
+                        vertex_t source,
+                        unsigned int* dist,
+                        vertex_t op_pos,
+                        vertex_t* prev) {
   unsigned int n = graph->t->size1;
 
   for (unsigned int i = 0; i < n; i++) {
@@ -410,14 +410,18 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
       previous_moves[1 - p_id].t == JUMP) {
     op_pos = previous_moves[1 - p_id].m;
   }
-  if (previous_moves[p_id].t == WATERLOO) {// If we made a waterloo move in the previous turn, 
-                                           // it means a wall was placed on our way, 
-                                           // we need to update our position to the position we ended up in after the waterloo move, 
-                                           // we need to update our graph to add the wall, 
+  if (previous_moves[p_id].t ==
+      WATERLOO) {  // If we made a waterloo move in the previous turn,
+                   // it means a wall was placed on our way,
+                   // we need to update our position to the position we ended up
+                   // in after the waterloo move, we need to update our graph to
+                   // add the wall,
     p_pos = previous_moves[p_id].m;
-    // Add the wall that blocked our move      
-      set_wall_mask(&p_graph, previous_moves[p_id].e[0].fr, previous_moves[p_id].e[0].to, 1);
-      set_wall_mask(&p_graph, previous_moves[p_id].e[0].to, previous_moves[p_id].e[0].fr, 1);
+    // Add the wall that blocked our move
+    set_wall_mask(&p_graph, previous_moves[p_id].e[0].fr,
+                  previous_moves[p_id].e[0].to, 1);
+    set_wall_mask(&p_graph, previous_moves[p_id].e[0].to,
+                  previous_moves[p_id].e[0].fr, 1);
   }
   printf("previous move: %d, current pos: %d\n", previous_moves[p_id].m, p_pos);
   /*

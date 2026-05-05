@@ -30,7 +30,7 @@ struct player_t load_player(const char* library_path) {
   p.get_player_name = (char const* (*)(void))dlsym(p.handle, "get_player_name");
   p.initialize =
       (void (*)(unsigned int, struct graph_t*))dlsym(p.handle, "initialize");
-  p.play = (struct move_t(*)(const struct move_t*))dlsym(p.handle, "play");
+  p.play = (struct move_t (*)(const struct move_t*))dlsym(p.handle, "play");
   p.finalize = (void (*)(void))dlsym(p.handle, "finalize");
 
   return p;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
 
   struct graph_t* player_graphs[NUM_PLAYERS];
   for (int i = 0; i < NUM_PLAYERS; i++) {
-    players[i].initialize(i, graph_init(m, type));
+    players[i].initialize(i, graph);
     printf("The player %s join the game as %s\n", players[i].get_player_name(),
            i == 0 ? "BLACK" : "WHITE");
   }

@@ -4,7 +4,6 @@
 #include "move_check.h"
 #include <string.h>
 
-
 int edge_exists(vertex_t fr, vertex_t to, struct graph_t* graph) {
   return gsl_spmatrix_uint_get(graph->t, fr, to) != NO_EDGE;
 }
@@ -27,7 +26,6 @@ static void set_wall_mask(struct graph_t* graph,
 int is_block_op(struct graph_t* graph,
                 struct move_t* move,
                 vertex_t p_pos[NUM_PLAYERS]) {
-  
   set_wall_mask(graph, move->e[0].fr, move->e[0].to, 1);
   set_wall_mask(graph, move->e[0].to, move->e[0].fr, 1);
   set_wall_mask(graph, move->e[1].fr, move->e[1].to, 1);
@@ -45,7 +43,8 @@ int is_block_op(struct graph_t* graph,
     vertex_t current = queue[read];
     read++;
     for (vertex_t neighbor = 0; neighbor < graph->t->size1; neighbor++) {
-      if (edge_exists(current, neighbor, graph) && !IS_WALL(graph, current, neighbor) && !visited[neighbor]) {
+      if (edge_exists(current, neighbor, graph) &&
+          !IS_WALL(graph, current, neighbor) && !visited[neighbor]) {
         visited[neighbor] = 1;
         queue[write] = neighbor;
         write++;
@@ -54,7 +53,7 @@ int is_block_op(struct graph_t* graph,
   }
 
   for (unsigned int i = 0; i < graph->num_objectives; i++) {
-    if (!visited[graph->objectives[i]]){
+    if (!visited[graph->objectives[i]]) {
       set_wall_mask(graph, move->e[0].fr, move->e[0].to, 0);
       set_wall_mask(graph, move->e[0].to, move->e[0].fr, 0);
       set_wall_mask(graph, move->e[1].fr, move->e[1].to, 0);
@@ -66,9 +65,8 @@ int is_block_op(struct graph_t* graph,
   set_wall_mask(graph, move->e[0].to, move->e[0].fr, 0);
   set_wall_mask(graph, move->e[1].fr, move->e[1].to, 0);
   set_wall_mask(graph, move->e[1].to, move->e[1].fr, 0);
-  
+
   return 1;
-  
 }
 
 int convert_waterloo(struct graph_t* graph,
