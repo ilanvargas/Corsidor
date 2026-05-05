@@ -46,7 +46,7 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
   p_graph->objectives = malloc(graph->num_objectives * sizeof(vertex_t));
   for (unsigned int i = 0; i < graph->num_objectives; i++)
     p_graph->objectives[i] = graph->objectives[i];
-  for (unsigned int i = 0; i < NUM_PLAYERS; i++)    
+  for (unsigned int i = 0; i < NUM_PLAYERS; i++)
     p_graph->start[i] = graph->start[i];
   p_pos = p_graph->start[p_id];
   p_prev_pos = INVALID_VERTEX;
@@ -175,8 +175,8 @@ static unsigned int get_next_objective(vertex_t pos,
                                        vertex_t op_pos,
                                        int player_id) {
   if (objective_left[player_id] == 0) {
-    return p_graph->start[player_id];  // All objectives reached, return starting
-                                      // position as next objective
+    return p_graph->start[player_id];  // All objectives reached, return
+                                       // starting position as next objective
   }
   vertex_t objective = UINT_MAX;
   get_closest_objective(pos, op_pos, &objective);

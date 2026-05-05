@@ -128,9 +128,8 @@ int main(int argc, char* argv[]) {
   int p_is_visited[NUM_PLAYERS][graph->num_objectives];
   memset(p_is_visited, 0, sizeof(p_is_visited));
 
-  struct graph_t* player_graphs[NUM_PLAYERS];
   for (int i = 0; i < NUM_PLAYERS; i++) {
-    players[i].initialize(i, graph);
+    players[i].initialize(i, graph_init(m, type));
     printf("The player %s join the game as %s\n", players[i].get_player_name(),
            i == 0 ? "BLACK" : "WHITE");
   }
