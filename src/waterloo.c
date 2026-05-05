@@ -30,9 +30,11 @@ int is_block_op(struct graph_t* graph, struct move_t* move, vertex_t op) {
   while (top > 0 && !is_visited_objectives(graph, is_visited)) {
     vertex_t current = pile[top];
     top--;
+    printf("yooo %d\n", top);
     for (unsigned int u = 0; u < graph->t->size1; u++) {
       if (IS_ADJACENT(graph, current, u) && !is_visited[u]) {
         is_visited[u] = 1;
+        printf("%d\n", top);
         pile[top] = u;
         top++;
       }
