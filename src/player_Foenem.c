@@ -166,8 +166,8 @@ static unsigned int get_next_objective(vertex_t pos,
                                        vertex_t op_pos,
                                        int player_id) {
   if (objective_left[player_id] == 0) {
-    return p_graph->start[player_id];  // All objectives reached, return starting
-                                      // position as next objective
+    return p_graph->start[player_id];  // All objectives reached, return
+                                       // starting position as next objective
   }
   vertex_t objective = UINT_MAX;
   get_closest_objective(pos, op_pos, &objective);

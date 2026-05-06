@@ -22,9 +22,9 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 
   // copy graph
   p_graph = graph;
-
   p_pos = p_graph->start[p_id];
   op_pos = p_graph->start[1 - p_id];
+
   is_visited = calloc(p_graph->t->size1, sizeof(int));
 }
 
@@ -40,7 +40,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
     if (IS_ADJACENT(p_graph, p_pos, v) && op_pos != v) {
       u = v;
       if (is_visited[v] == 0) {
-        is_visited[v] = 1;
+        is_visited[v] = (v != p_graph->start[p_id]) ? 1 : 0;
         p_pos = v;
         return (struct move_t){.c = p_id, .t = MOVE, .m = v};
       }
@@ -48,6 +48,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   }
 
   p_pos = u;
+  is_visited[u] = (u != p_graph->start[p_id]) ? 1 : 0;
   return (struct move_t){.c = p_id, .t = MOVE, .m = u};
 }
 

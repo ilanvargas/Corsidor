@@ -4,69 +4,58 @@
 #include "move_check.h"
 #include <string.h>
 
-int edge_exists(vertex_t fr, vertex_t to, struct graph_t* graph) {
-  return gsl_spmatrix_uint_get(graph->t, fr, to) != NO_EDGE;
+/** Verify if all objectives are visited */
+int is_visited_objectives(struct graph_t* graph, int* is_visited) {
+  unsigned int num_visited = 0;
+  for (unsigned int i = 0; i < graph->num_objectives; i++)
+    num_visited += is_visited[graph->objectives[i]];
+
+  return num_visited == graph->num_objectives;
 }
 
-/* Set or clear the wall bit for a given edge in the graph */
-static void set_wall_mask(struct graph_t* graph,
-                          vertex_t fr,
-                          vertex_t to,
-                          int enable) {
-  unsigned int value = gsl_spmatrix_uint_get(graph->t, fr, to);
-  if (enable) {
-    value |= WALL_MASK;  // Set the wall bit
-  } else {
-    value &= ~WALL_MASK;  // Clear the wall bit
-  }
-  gsl_spmatrix_uint_set(graph->t, fr, to, value);
-}
+/** Verify if opponent can reach objective position
+ * Deep search
+ */
+int is_block_op(struct graph_t* graph, struct move_t* move, vertex_t op) {
+  build_wall(graph, move->e);  // to be removed after
 
-/** Verify if opponent can reach objective position */
-int is_block_op(struct graph_t* graph,
-                struct move_t* move,
-                vertex_t p_pos[NUM_PLAYERS]) {
-  set_wall_mask(graph, move->e[0].fr, move->e[0].to, 1);
-  set_wall_mask(graph, move->e[0].to, move->e[0].fr, 1);
-  set_wall_mask(graph, move->e[1].fr, move->e[1].to, 1);
-  set_wall_mask(graph, move->e[1].to, move->e[1].fr, 1);
-  vertex_t start = p_pos[1 - move->c];
-  int visited[graph->t->size1];
-  memset(visited, 0, sizeof(visited));
-  vertex_t queue[graph->t->size1];
-  int read = 0, write = 0;
-  queue[write] = start;
-  write++;
-  visited[start] = 1;
+  int is_visited[graph->t->size1];
+  memset(is_visited, 0, graph->t->size1 * sizeof(int));
 
-  while (read < write) {
-    vertex_t current = queue[read];
-    read++;
-    for (vertex_t neighbor = 0; neighbor < graph->t->size1; neighbor++) {
-      if (edge_exists(current, neighbor, graph) &&
-          !IS_WALL(graph, current, neighbor) && !visited[neighbor]) {
-        visited[neighbor] = 1;
-        queue[write] = neighbor;
-        write++;
+  vertex_t pile[graph->t->size1];
+  pile[0] = op;
+  int top = 0;
+  is_visited[op] = 1;
+  while (top >= 0 && !is_visited_objectives(graph, is_visited)) {
+    vertex_t current = pile[top--];
+    for (unsigned int u = 0; u < graph->t->size1; u++) {
+      if (IS_ADJACENT(graph, current, u) && !IS_WALL(graph, current, u) && !is_visited[u]) {
+        is_visited[u] = 1;
+        pile[++top] = u;
       }
     }
   }
 
-  for (unsigned int i = 0; i < graph->num_objectives; i++) {
-    if (!visited[graph->objectives[i]]) {
-      set_wall_mask(graph, move->e[0].fr, move->e[0].to, 0);
-      set_wall_mask(graph, move->e[0].to, move->e[0].fr, 0);
-      set_wall_mask(graph, move->e[1].fr, move->e[1].to, 0);
-      set_wall_mask(graph, move->e[1].to, move->e[1].fr, 0);
-      return 0;
-    }
-  }
-  set_wall_mask(graph, move->e[0].fr, move->e[0].to, 0);
-  set_wall_mask(graph, move->e[0].to, move->e[0].fr, 0);
-  set_wall_mask(graph, move->e[1].fr, move->e[1].to, 0);
-  set_wall_mask(graph, move->e[1].to, move->e[1].fr, 0);
+  // remove walls
+  gsl_spmatrix_uint_set(
+      graph->t, move->e[0].fr, move->e[0].to,
+      gsl_spmatrix_uint_get(graph->t, move->e[0].fr, move->e[0].to) &
+          ~WALL_MASK);
+  gsl_spmatrix_uint_set(
+      graph->t, move->e[0].to, move->e[0].fr,
+      gsl_spmatrix_uint_get(graph->t, move->e[0].to, move->e[0].fr) &
+          ~WALL_MASK);
 
-  return 1;
+  gsl_spmatrix_uint_set(
+      graph->t, move->e[1].fr, move->e[1].to,
+      gsl_spmatrix_uint_get(graph->t, move->e[1].fr, move->e[1].to) &
+          ~WALL_MASK);
+  gsl_spmatrix_uint_set(
+      graph->t, move->e[1].to, move->e[1].fr,
+      gsl_spmatrix_uint_get(graph->t, move->e[1].to, move->e[1].fr) &
+          ~WALL_MASK);
+
+  return !is_visited_objectives(graph, is_visited);
 }
 
 int convert_waterloo(struct graph_t* graph,
@@ -142,7 +131,7 @@ int convert_waterloo(struct graph_t* graph,
         move->e[1] = INVALID_EDGE;
 
         return 1;
-      } else if (is_block_op(graph, move, p_pos)) {
+      } else if (is_block_op(graph, move, op)) {
         move->t = WATERLOO;
         move->m = INVALID_VERTEX;
         move->e[0] = INVALID_EDGE;
