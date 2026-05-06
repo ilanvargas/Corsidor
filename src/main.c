@@ -30,7 +30,7 @@ struct player_t load_player(const char* library_path) {
   p.get_player_name = (char const* (*)(void))dlsym(p.handle, "get_player_name");
   p.initialize =
       (void (*)(unsigned int, struct graph_t*))dlsym(p.handle, "initialize");
-  p.play = (struct move_t (*)(const struct move_t*))dlsym(p.handle, "play");
+  p.play = (struct move_t(*)(const struct move_t*))dlsym(p.handle, "play");
   p.finalize = (void (*)(void))dlsym(p.handle, "finalize");
 
   return p;
@@ -132,7 +132,6 @@ int main(int argc, char* argv[]) {
   int p_is_visited[NUM_PLAYERS][graph->num_objectives];
   memset(p_is_visited, 0, sizeof(p_is_visited));
   struct graph_t* player_graphs[NUM_PLAYERS];
-
 
   for (int i = 0; i < NUM_PLAYERS; i++) {
     player_graphs[i] = graph_init(m, type);
