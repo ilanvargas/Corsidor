@@ -93,7 +93,7 @@ void test_wall_waterloo() {
   build_wall(graph, wall);
 
   struct edge_t wall1[2] = {{.fr = 59, .to = 49}, {.fr = 59, .to = 58}};
-  struct edge_t wall2[2] = {{.fr = 59, .to = 69}, {.fr = 10, .to = 68}};
+  struct edge_t wall2[2] = {{.fr = 59, .to = 69}, {.fr = 59, .to = 68}};
   build_wall(graph, wall1);
   build_wall(graph, wall2);
 
