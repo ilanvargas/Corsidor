@@ -130,7 +130,8 @@ int main(int argc, char* argv[]) {
 
   struct graph_t* player_graphs[NUM_PLAYERS];
   for (int i = 0; i < NUM_PLAYERS; i++) {
-    players[i].initialize(i, graph);
+    player_graphs[i] = graph_init(m, type);
+    players[i].initialize(i, player_graphs[i]);
     printf("The player %s join the game as %s\n", players[i].get_player_name(),
            i == 0 ? "BLACK" : "WHITE");
   }

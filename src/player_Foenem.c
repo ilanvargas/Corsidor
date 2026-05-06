@@ -39,15 +39,7 @@ char const* get_player_name() {
 
 void initialize(unsigned int player_id, struct graph_t* graph) {
   p_id = player_id;
-  p_graph = malloc(sizeof(struct graph_t));
-  *p_graph = *graph;
-  p_graph->t = gsl_spmatrix_uint_alloc(graph->t->size1, graph->t->size2);
-  gsl_spmatrix_uint_memcpy(p_graph->t, graph->t);
-  p_graph->objectives = malloc(graph->num_objectives * sizeof(vertex_t));
-  for (unsigned int i = 0; i < graph->num_objectives; i++)
-    p_graph->objectives[i] = graph->objectives[i];
-  for (unsigned int i = 0; i < NUM_PLAYERS; i++)    
-    p_graph->start[i] = graph->start[i];
+  p_graph = graph;
   p_pos = p_graph->start[p_id];
   p_prev_pos = INVALID_VERTEX;
   op_pos = p_graph->start[1 - p_id];
@@ -104,15 +96,14 @@ void djikstra_with_prev(struct graph_t* graph,
       }
     }
 
-    if (u == UINT_MAX || best_dist == UINT_MAX) {
+    if (u == UINT_MAX || best_dist == UINT_MAX) { // No more reachable vertices
       break;
     }
 
     visited[u] = 1;
-
     /* Relax edges */
     for (unsigned int v = 0; v < n; v++) {
-      if (is_move_reachable(u, v, prev[u], op_pos) && !IS_WALL(graph, u, v)) {
+      if (is_move_reachable(u, v, prev[u], op_pos)) {
         if (dist[u] + 1 < dist[v]) {
           dist[v] = dist[u] + 1;
           prev[v] = u;
@@ -236,11 +227,18 @@ static int build_shortest_path(vertex_t source,
   return 1;
 }
 
+static int is_valid_edge(struct graph_t* graph, vertex_t fr, vertex_t to) {
+  return fr < graph->t->size1 && to < graph->t->size1;
+}
+
 /* Set or clear the wall bit for a given edge in the graph */
 static void set_wall_mask(struct graph_t* graph,
                           vertex_t fr,
                           vertex_t to,
                           int enable) {
+  if (!is_valid_edge(graph, fr, to)) {
+    return;
+  }
   unsigned int value = gsl_spmatrix_uint_get(graph->t, fr, to);
   if (enable) {
     value |= WALL_MASK;  // Set the wall bit
@@ -260,6 +258,13 @@ static unsigned int evaluate_wall_gain(struct edge_t wall[2],
                                        vertex_t opp_pos,
                                        vertex_t opp_checkpoint,
                                        unsigned int original_dist) {
+  if (!is_valid_edge(p_graph, wall[0].fr, wall[0].to) ||
+      !is_valid_edge(p_graph, wall[0].to, wall[0].fr) ||
+      !is_valid_edge(p_graph, wall[1].fr, wall[1].to) ||
+      !is_valid_edge(p_graph, wall[1].to, wall[1].fr)) {
+    return 0;
+  }
+
   set_wall_mask(p_graph, wall[0].fr, wall[0].to, 1);
   set_wall_mask(p_graph, wall[0].to, wall[0].fr, 1);
   set_wall_mask(p_graph, wall[1].fr, wall[1].to, 1);
@@ -350,20 +355,18 @@ static void find_best_wall(vertex_t pos,
   if (path_len == 1) {  // Opp and opp_checkpoint are adjacent,
                         // so we consider it as the best wall with maximum gain
     struct edge_t candidate[2];
-    find_wall_candidate_for_edge(opp_pos, opp_checkpoint, candidate);
+    if (!find_wall_candidate_for_edge(opp_pos, opp_checkpoint, candidate)) {
+      return;
+    }
 
     unsigned int gain = evaluate_wall_gain(candidate, pos, opp_pos,
                                            opp_checkpoint, original_dist);
     if (gain != UINT_MAX) {
       *gain_ptr = gain;
-      find_wall_candidate_for_edge(opp_pos, opp_checkpoint, best_wall);
-      return;
-    } else {  // If gain is UINT_MAX, it means placing the wall would make the
-              // opponent's checkpoint unreachable, this should not be allowed,
-              // so we return without setting a wall.
-
-      return;
+      best_wall[0] = candidate[0];
+      best_wall[1] = candidate[1];
     }
+    return;
   }
   /*
    * For each edge in the shortest path from opp_pos to opp_checkpoint,
