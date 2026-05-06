@@ -170,8 +170,9 @@ static unsigned int get_next_objective(vertex_t pos,
                                        // starting position as next objective
   }
   vertex_t objective = UINT_MAX;
-  get_closest_objective(pos, op_pos, &objective);
-  return objective;
+  get_closest_objective(pos, op_pos, &objective);  if (objective == UINT_MAX) {
+    return p_graph->start[player_id];
+  }  return objective;
 }
 /* Build the shortest path from source to target
  * Returns 1 if a path exists, 0 otherwise. If a path exists, it is stored in
