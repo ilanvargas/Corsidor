@@ -80,6 +80,7 @@ void djikstra_with_prev(struct graph_t* graph,
     if (i != source) {
       prev[i] = UINT_MAX;
     }
+    prev[source] = source;
   }
   dist[source] = 0;
 
