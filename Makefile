@@ -9,7 +9,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
 				-Wl,--rpath=${GSL_PATH}/lib
 
 CLIENTS = scarecrow.so foenem.so
-TESTS = test_move_valid test_waterloo
+TESTS = test_move_valid test_waterloo test_player_foenem_funcs
 
 all: build
 
@@ -36,6 +36,7 @@ dot_test: test_graph_impl
 test: build_tests
 	./test_move_valid
 	./test_waterloo
+	./test_player_foenem_funcs
 
 build_tests: $(TESTS)
 
@@ -43,6 +44,9 @@ test_waterloo: src/waterloo.o src/graph_impl.o test/test_waterloo.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test_move_valid: src/move_valid.o src/graph_impl.o test/test_move_valid.o
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+test_player_foenem_funcs: src/player_Foenem.o src/graph_impl.o src/move_valid.o test/test_player_foenem_funcs.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test_graph_impl: src/graph_impl.o test/test_graph_impl.o

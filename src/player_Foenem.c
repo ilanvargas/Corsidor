@@ -60,11 +60,12 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
  * Check if a target is reachable according to move validation rules.
  * Returns 1 if reachable, 0 otherwise.
  */
-int is_move_reachable(vertex_t pos,
+int is_move_reachable(struct graph_t* graph,
+                      vertex_t pos,
                       vertex_t next_step,
                       vertex_t prev_pos,
                       vertex_t op_pos) {
-  return move_valid(p_graph, next_step, pos, op_pos, prev_pos);
+  return move_valid(graph, next_step, pos, op_pos, prev_pos);
 }
 
 void djikstra_with_prev(struct graph_t* graph,
@@ -76,7 +77,9 @@ void djikstra_with_prev(struct graph_t* graph,
 
   for (unsigned int i = 0; i < n; i++) {
     dist[i] = UINT_MAX;
-    prev[i] = UINT_MAX;
+    if (i != source) {
+      prev[i] = UINT_MAX;
+    }
   }
   dist[source] = 0;
 
@@ -103,7 +106,7 @@ void djikstra_with_prev(struct graph_t* graph,
     visited[u] = 1;
     /* Relax edges */
     for (unsigned int v = 0; v < n; v++) {
-      if (is_move_reachable(u, v, prev[u], op_pos)) {
+      if (is_move_reachable(graph, u, v, prev[u], op_pos)) {
         if (dist[u] + 1 < dist[v]) {
           dist[v] = dist[u] + 1;
           prev[v] = u;
@@ -223,6 +226,17 @@ static int build_shortest_path(vertex_t source,
     path[len - 1 - i] = tmp;
   }
 
+  unsigned int next_index = 0;
+  for (unsigned int i = 0; i < len; i++){
+    if (dist[path[i]] == 1) {
+      next_index = i;
+      break;
+    }
+  }
+  for (unsigned int i = 0; i < len - next_index; i++) {
+    path[i] = path[i + next_index];
+  }
+  len -= next_index;
   free(dist);
   free(prev);
 
@@ -413,13 +427,15 @@ static vertex_t get_next_move_vertex(vertex_t current_pos,
     return UINT_MAX;
   }
   build_shortest_path(current_pos, target_pos, path, &path_len);
-  if (path_len == 0) {  // Already at target
-    return current_pos + 1;
-  }
   return path[0];
 }
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
+  if (p_prev_pos == (vertex_t)INVALID_VERTEX) {
+    p_prev_pos = p_pos;
+    p_pos = p_pos+1;  // Initialize previous position on the first move
+    return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos};  // Initialize previous position on the first move
+  }
   if (previous_moves[1 - p_id].t == MOVE ||
       previous_moves[1 - p_id].t == JUMP) {
     op_pos = previous_moves[1 - p_id].m;
@@ -437,14 +453,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
     set_wall_mask(p_graph, previous_moves[p_id].e[0].to,
                   previous_moves[p_id].e[0].fr, 1);
   }
-  printf("previous move: %d, current pos: %d\n", previous_moves[p_id].m, p_pos);
-  /*
 
-    if (previous_moves[p_id].t == NO_TYPE) {
-      return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos + 1};
-    }
-
-  */
   vertex_t my_checkpoint = get_next_objective(p_pos, op_pos, p_id);
   vertex_t opp_checkpoint = get_next_objective(op_pos, p_pos, 1 - p_id);
 
