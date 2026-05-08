@@ -90,7 +90,7 @@ void djikstra_with_prev(struct graph_t* graph,
     }
 
     visited[u] = 1;
-    if (prev[u] == u) {
+    if (u == graph->start[p_id]) {  // If we are at the starting position, we can consider all adjacent vertices as reachable with distance 1
       for (unsigned int v = 0; v < n; v++) {
         if (IS_ADJACENT(graph, u, v) && !IS_WALL(graph, u, v) && v != op_pos) {
           dist[v] = 1;
@@ -199,17 +199,14 @@ static int build_shortest_path(vertex_t source,
   unsigned int len = 0;
   vertex_t cur = target;
   while (cur !=
-         UINT_MAX) {  // Trace back from target to source using prev array
-    path[len] = cur;
-    if (cur == source) {
-      if (len == 0) {  // Source and target are the same
-        free(dist);
-        free(prev);
-        *path_len = 0;
-        return 1;
-      }
-      break;
+         source) {  // Trace back from target to source using prev array
+    if (cur == UINT_MAX || len >= n) {
+      free(dist);
+      free(prev);
+      *path_len = 0;
+      return 0;
     }
+    path[len] = cur;
     len++;
     cur = prev[cur];
   }
@@ -414,7 +411,7 @@ static void find_best_wall(vertex_t pos,
 
 static vertex_t get_next_move_vertex(vertex_t current_pos,
                                      vertex_t target_pos) {
-  vertex_t path[p_graph->num_vertices];
+  vertex_t* path = malloc(p_graph->num_vertices * sizeof(vertex_t));
   unsigned int path_len = 0;
 
   if (!build_shortest_path(current_pos, target_pos, path,
@@ -422,11 +419,13 @@ static vertex_t get_next_move_vertex(vertex_t current_pos,
     return UINT_MAX;
   }
   build_shortest_path(current_pos, target_pos, path, &path_len);
-  return path[0];
+  vertex_t next_move = path[0];
+  free(path);
+  return next_move;
 }
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
-  if (p_prev_pos == (vertex_t)INVALID_VERTEX) {
+  /*if (p_prev_pos == (vertex_t)INVALID_VERTEX) {
     p_prev_pos = p_pos;  // Initialize previous position on the first move
     if (move_valid(p_graph, p_pos, p_pos+1, op_pos, p_prev_pos)) {
       p_pos = p_pos + 1;
@@ -437,6 +436,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
     }
     return (struct move_t){.c = p_id, .t = NO_TYPE};  // Initialize previous position on the first move
   }
+  */
   if (previous_moves[1 - p_id].t == MOVE ||
       previous_moves[1 - p_id].t == JUMP) {
     op_pos = previous_moves[1 - p_id].m;
