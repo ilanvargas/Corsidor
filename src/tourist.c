@@ -161,22 +161,30 @@ void path_creation(struct players_state_t* players_state,
                    vertex_t source,
                    vertex_t obj,
                    unsigned int i,
-                   vertex_t* parent) {
+                   vertex_t* parent,
+                   enum dir_t* parent_dir) {
   vertex_t curr_path[players_state->graph->t->size1];
+  vertex_t curr_path_dir[players_state->graph->t->size1];
   size_t curr_path_len = 0;
   vertex_t v = obj;
   while (v != source) {
-    curr_path[curr_path_len++] = v;
+    curr_path[curr_path_len] = v;
     v = parent[v];
+    // dir_parent of precendent = dir used
+    curr_path_dir[curr_path_len] = parent_dir[v];
+
+    curr_path_len++;
   }
 
-  for (size_t j = 0; j < curr_path_len; j++)
+  for (size_t j = 0; j < curr_path_len; j++) {
     path->paths[i][j] = curr_path[curr_path_len - j - 1];
+    path->dirs[i][j] = curr_path_dir[curr_path_len - j - 1];
+  }
   path->lens[i] = curr_path_len;
   
   printf("path %d: ", i);
   for (size_t j = 0; j < path->lens[i]; j++)
-    printf("%d ", path->paths[i][j]);
+    printf("s:%d,dir:%d  ", path->paths[i][j], path->dirs[i][j]);
   printf("\n");
 }
 
@@ -210,7 +218,7 @@ void global_glouton(struct players_state_t* players_state, struct path_t* path) 
         next_objective(players_state, i, dist, num_objectives_to_reach,
                        is_objective_reached_path, path->i_objectives);
     printf("next objective %d\n", obj);
-    path_creation(players_state, path, source, obj, i, parent);
+    path_creation(players_state, path, source, obj, i, parent, parent_dir);
 
     // preparation for next path
     source = obj;
@@ -229,4 +237,42 @@ void global_glouton(struct players_state_t* players_state, struct path_t* path) 
 
   path->total_dist = total_dist;
   path->origin_source = source;
+}
+
+void go_throught_path(struct players_state_t* players_state, 
+                      struct path_t* path,
+                      struct move_t* move) {
+  vertex_t v = players_state->pos;
+  enum dir_t dir_go = path->dirs[path.i][path.j]
+
+  int i = 0;
+  while (i < MAX_DIST_STRAIGHT && v != move->m) {
+    vertex_t u = 0;
+    while (u < players_state->graph->t->size1 &&
+           gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
+      u++;
+
+    // If opponent in path
+    if (u == op) {
+      // if we can jump
+      if (i == 0) {
+        for (vertex_t s = 0; s < players_state->graph->t->size1; s++) {
+          if (gsl_spmatrix_uint_get(graph->t, u, s) == dir_go) {
+            *move = {.c = players_state->id, .t = JUMP, .m = s};
+            break;
+          }
+        } 
+      }
+      else {
+        
+      }
+    }
+
+    v = u;
+    i++;
+  }
+
+  // to must be found in max_dist loops
+  return v == to;
+}
 }

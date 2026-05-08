@@ -26,7 +26,7 @@ scarecrow.so: src/player_scarecrow.o
 foenem.so: src/graph_impl.o src/player_Foenem.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
-tourist.so: src/player_tourist.o src/algo_glouton.o
+tourist.so: src/player_tourist.o src/tourist.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 dot_test: test_graph_impl
