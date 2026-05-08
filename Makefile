@@ -1,5 +1,5 @@
-#GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
-GSL_PATH ?= $(HOME)/corsidor-S6/gsl
+GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
+#GSL_PATH ?= $(HOME)/corsidor-S6/gsl
 DOT ?= dot
 #DOT ?= $(HOME)/corsidor-S6/graphviz/bin/dot
 

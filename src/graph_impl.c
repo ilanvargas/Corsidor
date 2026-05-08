@@ -173,18 +173,14 @@ void graph_show(struct graph_t* graph, char* file_name) {
 
   size_t N = graph->t->size1;
   for (size_t i = 0; i < N; i++) {
-    int is_show = 0;
     for (size_t j = i; j < N; j++) {
-      if (gsl_spmatrix_uint_get(graph->t, i, j) > 0) {
-        if (!is_show) {
-          is_show = 1;
-          fprintf(fptr, "\t \"%ld\" -- {", i);
-        }
-        fprintf(fptr, "\"%ld\" ", j);
+      if (gsl_spmatrix_uint_get(graph->t, i, j) != NO_EDGE) {
+        if (IS_WALL(graph, i, j)) 
+          fprintf(fptr, "\"%ld\" -- \"%ld\"[color=red];\n", i, j);
+        else
+          fprintf(fptr, "\"%ld\" -- \"%ld\";\n", i, j);
       }
     }
-    if (is_show)
-      fprintf(fptr, "}; \n");
   }
 
   fprintf(fptr, "}");

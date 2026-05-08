@@ -49,7 +49,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 
   // tacking a step throught the path
   vertex_t m = path.paths[path.i][path.j++];
-  if (path.j > path.lens[path.i]) {
+  if (path.j >= path.lens[path.i]) {
     path.i++;
     path.j = 0;
   }
@@ -57,16 +57,16 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   // jump if opponent is blocking
   if (players_state.op_pos == m) {
     path.j++;
-    if (path.j > path.lens[path.i]) {
+    if (path.j >= path.lens[path.i]) {
       path.i++;
       path.j = 0;
     }
 
     return (struct move_t){
-        .c = players_state.id, .t = JUMP, .m = path.paths[path.i][path.j++]};
+        .c = players_state.id, .t = JUMP, .m = path.paths[path.i][path.j]};
   }
 
-  return (struct move_t){.c = players_state.id, .t = MOVE, .m = 10};
+  return (struct move_t){.c = players_state.id, .t = MOVE, .m = m};
 }
 
 void finalize() {
