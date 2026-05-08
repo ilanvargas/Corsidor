@@ -28,7 +28,7 @@ int is_block_op(struct graph_t* graph, struct move_t* move, vertex_t op) {
   is_visited[op] = 1;
   while (top >= 0 && !is_visited_objectives(graph, is_visited)) {
     vertex_t current = pile[top--];
-    for (unsigned int u = 0; u < graph->t->size1; u++) {
+    for (vertex_t u = 0; u < graph->t->size1; u++) {
       if (IS_ADJACENT(graph, current, u) && !IS_WALL(graph, current, u) &&
           !is_visited[u]) {
         is_visited[u] = 1;

@@ -219,7 +219,7 @@ static int build_shortest_path(vertex_t source,
   }
 
   unsigned int next_index = 0;
-  for (unsigned int i = 0; i < len; i++){
+  for (unsigned int i = 0; i < len; i++) {
     if (dist[path[i]] == 1) {
       next_index = i;
       break;

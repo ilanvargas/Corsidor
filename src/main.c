@@ -30,7 +30,7 @@ struct player_t load_player(const char* library_path) {
   p.get_player_name = (char const* (*)(void))dlsym(p.handle, "get_player_name");
   p.initialize =
       (void (*)(unsigned int, struct graph_t*))dlsym(p.handle, "initialize");
-  p.play = (struct move_t(*)(const struct move_t*))dlsym(p.handle, "play");
+  p.play = (struct move_t (*)(const struct move_t*))dlsym(p.handle, "play");
   p.finalize = (void (*)(void))dlsym(p.handle, "finalize");
 
   return p;
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
 
   struct player_t players[NUM_PLAYERS];
   players[color] = load_player("./scarecrow.so");
-  players[1 - color] = load_player("./foenem.so");
+  players[1 - color] = load_player("./tourist.so");
 
   struct graph_t* graph = graph_init(m, type);
 

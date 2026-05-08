@@ -33,7 +33,7 @@ int path_dir_diff(struct graph_t* graph,
   if (dir1 == dir2)
     return 0;
   int diff = abs((int)dir1 - (int)dir2);
-  return diff > NUM_DIRS / 2 ? NUM_DIRS - diff : diff;
+  return (diff > NUM_DIRS / 2) ? NUM_DIRS - diff : diff;
 }
 
 /** Check if exists straight, clear of opponents, path between fr and to of max
