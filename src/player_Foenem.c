@@ -228,7 +228,7 @@ static int build_shortest_path(vertex_t source,
   }
 
   unsigned int next_index = 0;
-  for (unsigned int i = 0; i < len; i++){
+  for (unsigned int i = 0; i < len; i++) {
     if (dist[path[i]] == 1) {
       next_index = i;
       break;
@@ -434,8 +434,11 @@ static vertex_t get_next_move_vertex(vertex_t current_pos,
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   if (p_prev_pos == (vertex_t)INVALID_VERTEX) {
     p_prev_pos = p_pos;
-    p_pos = p_pos+1;  // Initialize previous position on the first move
-    return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos};  // Initialize previous position on the first move
+    p_pos = p_pos + 1;  // Initialize previous position on the first move
+    return (struct move_t){
+        .c = p_id,
+        .t = MOVE,
+        .m = p_pos};  // Initialize previous position on the first move
   }
   if (previous_moves[1 - p_id].t == MOVE ||
       previous_moves[1 - p_id].t == JUMP) {
