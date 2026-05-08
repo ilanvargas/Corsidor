@@ -2,26 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "graph_impl.h"
 #include "move_check.h"
 #include "player.h"
 
-int path_dir_diff(struct graph_t* graph,
-                  vertex_t prev,
-                  vertex_t fr,
-                  vertex_t to,
-                  enum dir_t* dir_go);
-int is_straigh_clear_path(struct graph_t* graph,
-                          vertex_t to,
-                          vertex_t fr,
-                          vertex_t op,
-                          enum dir_t dir_go,
-                          int max_dist);
 
-int move_valid(struct graph_t* graph,
-               vertex_t to,
-               vertex_t fr,
-               vertex_t op,
-               vertex_t prev);
 
 char const* p_name = "Foenem";
 unsigned int p_id;
@@ -105,6 +90,15 @@ void djikstra_with_prev(struct graph_t* graph,
     }
 
     visited[u] = 1;
+    if (prev[u] == u) {
+      for (unsigned int v = 0; v < n; v++) {
+        if (IS_ADJACENT(graph, u, v) && !IS_WALL(graph, u, v) && v != op_pos) {
+          dist[v] = 1;
+          prev[v] = u;
+        }
+      }
+      continue;
+    }
     /* Relax edges */
     for (unsigned int v = 0; v < n; v++) {
       if (is_move_reachable(graph, u, v, prev[u], op_pos)) {
@@ -433,12 +427,15 @@ static vertex_t get_next_move_vertex(vertex_t current_pos,
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   if (p_prev_pos == (vertex_t)INVALID_VERTEX) {
-    p_prev_pos = p_pos;
-    p_pos = p_pos + 1;  // Initialize previous position on the first move
-    return (struct move_t){
-        .c = p_id,
-        .t = MOVE,
-        .m = p_pos};  // Initialize previous position on the first move
+    p_prev_pos = p_pos;  // Initialize previous position on the first move
+    if (move_valid(p_graph, p_pos, p_pos+1, op_pos, p_prev_pos)) {
+      p_pos = p_pos + 1;
+      return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos};
+    } else if (move_valid(p_graph, p_pos, p_pos-1, op_pos, p_prev_pos)) {
+      p_pos = p_pos - 1;
+      return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos};
+    }
+    return (struct move_t){.c = p_id, .t = NO_TYPE};  // Initialize previous position on the first move
   }
   if (previous_moves[1 - p_id].t == MOVE ||
       previous_moves[1 - p_id].t == JUMP) {

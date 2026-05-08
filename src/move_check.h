@@ -11,6 +11,37 @@
 #define INVALID_VERTEX -1
 #define INVALID_EDGE (struct edge_t){-1, -1}
 
+
+/** Difference in path direction. 0 -> straight, 1 -> 60°, else more */
+int path_dir_diff(struct graph_t* graph,
+                  vertex_t prev,
+                  vertex_t fr,
+                  vertex_t to,
+                  enum dir_t* dir_go);
+
+/** Check if exists straight, clear of opponents, path between fr and to of max
+ * distance max_dist in direction dir */
+int is_straigh_clear_path(struct graph_t* graph,
+                          vertex_t to,
+                          vertex_t fr,
+                          vertex_t op,
+                          enum dir_t dir_go,
+                          int max_dist);
+
+/* Validates MOVE type
+ * ARGS:
+ * - struct graph_t* graph: game graph
+ * - vertex_t to:           end move position m
+ * - vertex_t fr:           current player position
+ * - vertex_t op:           current opponent position
+ * - vertex_t prev:         previous player postion
+ */
+int move_valid(struct graph_t* graph,
+               vertex_t to,
+               vertex_t fr,
+               vertex_t op,
+               vertex_t prev);
+
 /** Checks if a move is valide
  *  Changes p_walls[NUM_PLAYERS] if wall move
  *  ARGS:
