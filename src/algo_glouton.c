@@ -3,6 +3,7 @@
 
 #include "player_tourist.h"
 
+#include <stdio.h>
 /* BFS helper
  * Enqueue and calulate dist, parent, parent_dir in vertex further than curr
  * neighbours Usefull for straight and 60 deg case
@@ -88,7 +89,7 @@ void BFS(struct players_state_t* players_state,
 
         int diff = (parent_dir[curr] != NO_EDGE)
                        ? abs((int)parent_dir[curr] - (int)dir_u)
-                       : NUM_DIRS;
+                       : UINT_MAX;
         int dir_diff = (diff > NUM_DIRS / 2) ? NUM_DIRS - diff : diff;
 
         // can advance up to MAX_DIST_STRAIGHT vertex straight ahead
@@ -133,7 +134,7 @@ vertex_t next_objective(struct players_state_t* players_state,
   if (i == num_objectives_to_reach)
     return players_state->graph->start[players_state->id];
 
-  unsigned int min_i_obj;
+  unsigned int min_i_obj = players_state->graph->num_objectives;
   unsigned int dist_min_obj = UINT_MAX;
   for (unsigned int j = 0; j < players_state->graph->num_objectives; j++) {
     if (dist[players_state->graph->objectives[j]] < dist_min_obj &&
@@ -142,6 +143,9 @@ vertex_t next_objective(struct players_state_t* players_state,
       dist_min_obj = dist[players_state->graph->objectives[j]];
     }
   }
+
+  if (min_i_obj == players_state->graph->num_objectives)
+    return players_state->graph->start[players_state->id];
 
   paths_i_objectives[i] = min_i_obj;
   is_objective_reached_path[min_i_obj] = 1;
@@ -162,13 +166,18 @@ void path_creation(struct players_state_t* players_state,
   size_t curr_path_len = 0;
   vertex_t v = obj;
   while (v != source) {
-    v = parent[v];
     curr_path[curr_path_len++] = v;
+    v = parent[v];
   }
 
   for (size_t j = 0; j < curr_path_len; j++)
     path->paths[i][j] = curr_path[curr_path_len - j - 1];
   path->lens[i] = curr_path_len;
+  
+  printf("path %d: ", i);
+  for (size_t j = 0; j < path->lens[i]; j++)
+    printf("%d ", path->paths[i][j]);
+  printf("\n");
 }
 
 void global_glouton(struct players_state_t* players_state, struct path_t* path) {
@@ -200,6 +209,7 @@ void global_glouton(struct players_state_t* players_state, struct path_t* path) 
     vertex_t obj =
         next_objective(players_state, i, dist, num_objectives_to_reach,
                        is_objective_reached_path, path->i_objectives);
+    printf("next objective %d\n", obj);
     path_creation(players_state, path, source, obj, i, parent);
 
     // preparation for next path

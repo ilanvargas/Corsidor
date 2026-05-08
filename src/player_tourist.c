@@ -38,35 +38,39 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
   path.i_objectives = malloc(graph->num_objectives * sizeof(unsigned int));
 }
 
+#include <stdio.h>
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
-  if (previous_moves[1 - players_state.id].t == MOVE ||
-      previous_moves[1 - players_state.id].t == JUMP)
-    players_state.op_pos = previous_moves[1 - players_state.id].m;
+  unsigned int op_id = 1 - players_state.id;
+  enum move_type_t op_type = previous_moves[op_id].t;
+  if (op_type == MOVE || op_type == JUMP)
+    players_state.op_pos = previous_moves[op_id].m;
 
-  if (previous_moves[players_state.id].t == NO_TYPE ||
-      previous_moves[players_state.id].t == WATERLOO)
+  enum move_type_t my_type = previous_moves[players_state.id].t;
+  if (my_type == NO_TYPE || my_type == WATERLOO)
     global_glouton(&players_state, &path);
 
-  // tacking a step throught the path
-  vertex_t m = path.paths[path.i][path.j++];
+  vertex_t target = path.paths[path.i][path.j];
+
+  // go forward
+  path.j++;
   if (path.j >= path.lens[path.i]) {
     path.i++;
     path.j = 0;
   }
 
-  // jump if opponent is blocking
-  if (players_state.op_pos == m) {
+  // jump if opponent blocks target
+  // stay on path
+  if (players_state.op_pos == target) {
+    vertex_t jump_target = path.paths[path.i][path.j];
     path.j++;
     if (path.j >= path.lens[path.i]) {
       path.i++;
       path.j = 0;
     }
-
-    return (struct move_t){
-        .c = players_state.id, .t = JUMP, .m = path.paths[path.i][path.j]};
+    return (struct move_t){.c = players_state.id, .t = JUMP, .m = jump_target};
   }
 
-  return (struct move_t){.c = players_state.id, .t = MOVE, .m = m};
+  return (struct move_t){.c = players_state.id, .t = MOVE, .m = target};
 }
 
 void finalize() {
