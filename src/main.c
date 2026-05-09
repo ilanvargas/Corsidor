@@ -30,7 +30,7 @@ struct player_t load_player(const char* library_path) {
   p.get_player_name = (char const* (*)(void))dlsym(p.handle, "get_player_name");
   p.initialize =
       (void (*)(unsigned int, struct graph_t*))dlsym(p.handle, "initialize");
-  p.play = (struct move_t(*)(const struct move_t*))dlsym(p.handle, "play");
+  p.play = (struct move_t (*)(const struct move_t*))dlsym(p.handle, "play");
   p.finalize = (void (*)(void))dlsym(p.handle, "finalize");
 
   return p;
@@ -173,8 +173,9 @@ int main(int argc, char* argv[]) {
 
     if (!move_is_valid(graph, &move, p_pos, p_prev_pos, p_walls)) {
       fprintf(stderr, "Invalid move by %s\n", color_str);
-      printf("%s plays {.t= %d, .m= %d e=((%d, %d),(%d, %d)} -> invalid\n", color_str, move.t,
-             move.m, move.e[0].fr, move.e[0].to, move.e[1].fr, move.e[1].to);
+      printf("%s plays {.t= %d, .m= %d e=((%d, %d),(%d, %d)} -> invalid\n",
+             color_str, move.t, move.m, move.e[0].fr, move.e[0].to,
+             move.e[1].fr, move.e[1].to);
       printf("%s wins by invalid move!\n", color_op_str);  // Opponent wins
       break;
     }

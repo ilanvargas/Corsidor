@@ -3,8 +3,6 @@
 
 #include "player_tourist.h"
 
-#include <stdio.h>
-
 struct players_state_t* init_players_state(unsigned int player_id,
                                            struct graph_t* graph) {
   struct players_state_t* players_state =
@@ -247,11 +245,6 @@ void path_creation(struct players_state_t* players_state,
     path->paths[i][j] = curr_path[curr_path_len - j - 1];
   }
   path->lens[i] = curr_path_len;
-
-  printf("path %d: ", i);
-  for (size_t j = 0; j < path->lens[i]; j++)
-    printf("%d ", path->paths[i][j]);
-  printf("\n");
 }
 
 void global_glouton(struct players_state_t* players_state,
@@ -405,7 +398,9 @@ void remove_wall(struct players_state_t* players_state, struct edge_t e) {
       gsl_spmatrix_uint_get(players_state->graph->t, e.to, e.fr) & ~WALL_MASK);
 }
 
-int wall_move(struct players_state_t* players_state, struct path_t* path, struct move_t* move) {
+int wall_move(struct players_state_t* players_state,
+              struct path_t* path,
+              struct move_t* move) {
   if (players_state->num_walls <= 0)
     return 0;
 
@@ -435,7 +430,7 @@ int wall_move(struct players_state_t* players_state, struct path_t* path, struct
   if (obj_dist == UINT_MAX)
     obj = players_state->graph->start[op_id];
 
-  //path
+  // path
   vertex_t op_path[n];
   size_t op_path_len = 0;
   vertex_t v = obj;
@@ -449,15 +444,15 @@ int wall_move(struct players_state_t* players_state, struct path_t* path, struct
   // find best wall placement
   unsigned int obj_dist_wall = obj_dist;
   struct edge_t e[2];
-  for (unsigned int i = 0; i+1 < op_path_len; i++) {
-    struct edge_t e_tmp[] = {
-      {.fr = op_path[i], .to = op_path[i+1]},
-      {.fr = op_path[i], .to = op_path[i]}
-    };
+  for (unsigned int i = 0; i + 1 < op_path_len; i++) {
+    struct edge_t e_tmp[] = {{.fr = op_path[i], .to = op_path[i + 1]},
+                             {.fr = op_path[i], .to = op_path[i]}};
     for (vertex_t v = 0; v < n; v++) {
-      if (gsl_spmatrix_uint_get(players_state->graph->t, op_path[i], v) != NO_EDGE &&
+      if (gsl_spmatrix_uint_get(players_state->graph->t, op_path[i], v) !=
+              NO_EDGE &&
           !IS_WALL(players_state->graph, op_path[i], v) &&
-          gsl_spmatrix_uint_get(players_state->graph->t, v, op_path[i+1]) != NO_EDGE) {
+          gsl_spmatrix_uint_get(players_state->graph->t, v, op_path[i + 1]) !=
+              NO_EDGE) {
         e_tmp[1].to = v;
       }
     }
@@ -469,11 +464,12 @@ int wall_move(struct players_state_t* players_state, struct path_t* path, struct
     BFS(players_state, source, parent, parent_dir, dist, color);
 
     if (dist[obj] > obj_dist_wall && dist[obj] < UINT_MAX) {
-      e[0] = e_tmp[0]; e[1] = e_tmp[1];
+      e[0] = e_tmp[0];
+      e[1] = e_tmp[1];
       obj_dist_wall = dist[obj];
     }
 
-    //reset wall
+    // reset wall
     remove_wall(players_state, e_tmp[0]);
     remove_wall(players_state, e_tmp[1]);
   }
@@ -482,7 +478,6 @@ int wall_move(struct players_state_t* players_state, struct path_t* path, struct
   free(parent);
   free(parent_dir);
   free(color);
-  printf("no wall dist:%d, wall dist:%d\n", obj_dist, obj_dist_wall);
 
   // Do not place wall if not worth it
   if (abs((int)obj_dist_wall - (int)obj_dist) < WALL_DIFF)

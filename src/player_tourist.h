@@ -14,13 +14,13 @@
 
 // game players state attributes
 struct players_state_t {
-  unsigned int id;        // player color
-  struct graph_t* graph;  // game graph for player
-  vertex_t pos;           // position player
-  vertex_t op_pos;        // position opponent
-  enum dir_t prev_dir;    // previous dir taken
-  struct move_t prev_move;// previous move
-  int num_walls;          // number of walls left
+  unsigned int id;          // player color
+  struct graph_t* graph;    // game graph for player
+  vertex_t pos;             // position player
+  vertex_t op_pos;          // position opponent
+  enum dir_t prev_dir;      // previous dir taken
+  struct move_t prev_move;  // previous move
+  int num_walls;            // number of walls left
 
   int* is_objective_reached[NUM_PLAYERS];  // reached objectives for each player
   unsigned int num_objective_to_reach;     // number of objectives to reach
@@ -79,12 +79,14 @@ struct move_t go_throught_path(struct players_state_t* players_state,
 void build_wall(struct players_state_t* players_state, struct edge_t e);
 
 /* Unblocks one edge */
-int wall_move(struct players_state_t* players_state, struct path_t* path, struct move_t* move);
+void remove_wall(struct players_state_t* players_state, struct edge_t e);
 
 /* Decides and places wall
  * If decides to place wall then returns 1 and modifies move
  * Else returns 0
  */
-int wall_move(struct players_state_t* players_state, struct path_t* path, struct move_t* move);
+int wall_move(struct players_state_t* players_state,
+              struct path_t* path,
+              struct move_t* move);
 
 #endif  // __PLAYER_TOURIST_H__

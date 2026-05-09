@@ -42,10 +42,16 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
       players_state->prev_dir = NO_EDGE;
       players_state->pos = previous_moves[players_state->id].m;
       global_glouton(players_state, path);
+    } else {
+      for (int i = 0; i < 2; i++) {
+        // invalide edge condition
+        if (previous_moves[players_state->id].e[i].to == UINT_MAX)
+          remove_wall(players_state, players_state->prev_move.e[i]);
+      }
     }
   }
 
-  struct move_t move; 
+  struct move_t move;
   if (!wall_move(players_state, path, &move))
     move = go_throught_path(players_state, path);
 
