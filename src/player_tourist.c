@@ -29,14 +29,15 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 
   players_state.num_objective_to_reach = graph->num_objectives;
 
-  // graph->num_objectives+2 because pos -> objectives -> starting point
-  path.paths = malloc((graph->num_objectives + 2) * sizeof(vertex_t*));
-  for (unsigned int i = 0; i < graph->num_objectives + 2; i++) {
+  // graph->num_objectives+1 because pos -> objectives -> starting point
+  int num_paths = graph->num_objectives + 1;
+  path.paths = malloc(num_paths * sizeof(vertex_t*));
+  for (unsigned int i = 0; i < graph->num_objectives + 1; i++) {
     path.paths[i] = malloc((graph->t->size1) * sizeof(vertex_t));  // one path
   }
 
-  path.dists = malloc((graph->num_objectives + 1) * sizeof(unsigned int));
-  path.lens = malloc((graph->num_objectives + 1) * sizeof(size_t));
+  path.dists = malloc(num_paths * sizeof(unsigned int));
+  path.lens = malloc(num_paths * sizeof(size_t));
   path.i_objectives = malloc(graph->num_objectives * sizeof(unsigned int));
 }
 
