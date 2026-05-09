@@ -15,6 +15,8 @@ struct players_state_t* init_players_state(unsigned int player_id,
   players_state->pos = graph->start[player_id];
   players_state->op_pos = graph->start[1 - player_id];
   players_state->prev_dir = NO_EDGE;
+  players_state->prev_move = (struct move_t){.t = NO_TYPE};
+  players_state->num_walls = graph->num_edges / 16;
 
   players_state->is_objective_reached[player_id] =
       malloc(graph->num_objectives * sizeof(int));
@@ -148,7 +150,7 @@ void BFS(struct players_state_t* players_state,
           gsl_spmatrix_uint_get(players_state->graph->t, curr, u);
 
       // for every neighbour of curr
-      if (dir_u != NO_EDGE) {
+      if (dir_u != NO_EDGE && !IS_WALL(players_state->graph, curr, u)) {
         // if never visited
         if (color[u] == 0) {
           dist[u] = dist[curr] + 1;
@@ -386,6 +388,111 @@ struct move_t go_throught_path(struct players_state_t* players_state,
 }
 
 void build_wall(struct players_state_t* players_state, struct edge_t e) {
-  gsl_spmatrix_uint_set(players_state->graph->t, e.fr, e.to, NO_EDGE);
-  gsl_spmatrix_uint_set(players_state->graph->t, e.to, e.fr, NO_EDGE);
+  gsl_spmatrix_uint_set(
+      players_state->graph->t, e.fr, e.to,
+      gsl_spmatrix_uint_get(players_state->graph->t, e.fr, e.to) | WALL_MASK);
+  gsl_spmatrix_uint_set(
+      players_state->graph->t, e.to, e.fr,
+      gsl_spmatrix_uint_get(players_state->graph->t, e.to, e.fr) | WALL_MASK);
+}
+
+void remove_wall(struct players_state_t* players_state, struct edge_t e) {
+  gsl_spmatrix_uint_set(
+      players_state->graph->t, e.fr, e.to,
+      gsl_spmatrix_uint_get(players_state->graph->t, e.fr, e.to) & ~WALL_MASK);
+  gsl_spmatrix_uint_set(
+      players_state->graph->t, e.to, e.fr,
+      gsl_spmatrix_uint_get(players_state->graph->t, e.to, e.fr) & ~WALL_MASK);
+}
+
+int wall_move(struct players_state_t* players_state, struct path_t* path, struct move_t* move) {
+  if (players_state->num_walls <= 0)
+    return 0;
+
+  unsigned int op_id = 1 - players_state->id;
+  unsigned int n = players_state->graph->t->size1;
+
+  // dynamic allocation
+  unsigned int* dist = malloc(n * sizeof(unsigned int));
+  vertex_t* parent = malloc(n * sizeof(vertex_t));
+  enum dir_t* parent_dir = malloc(n * sizeof(enum dir_t));
+  int* color = malloc(n * sizeof(int));
+
+  vertex_t source = players_state->op_pos;
+  init_BFS(players_state, source, dist, parent_dir, color);
+  BFS(players_state, source, parent, parent_dir, dist, color);
+
+  // find closest object
+  vertex_t obj;
+  unsigned int obj_dist = UINT_MAX;
+  for (unsigned int i = 0; i < players_state->graph->num_objectives; i++) {
+    if (dist[players_state->graph->objectives[i]] < obj_dist &&
+        !players_state->is_objective_reached[op_id][i]) {
+      obj = players_state->graph->objectives[i];
+      obj_dist = dist[obj];
+    }
+  }
+  if (obj_dist == UINT_MAX)
+    obj = players_state->graph->start[op_id];
+
+  //path
+  vertex_t op_path[n];
+  size_t op_path_len = 0;
+  vertex_t v = obj;
+  while (v != source) {
+    op_path[op_path_len] = v;
+    v = parent[v];
+    op_path_len++;
+  }
+  op_path[op_path_len++] = source;
+
+  // find best wall placement
+  unsigned int obj_dist_wall = obj_dist;
+  struct edge_t e[2];
+  for (unsigned int i = 0; i+1 < op_path_len; i++) {
+    struct edge_t e_tmp[] = {
+      {.fr = op_path[i], .to = op_path[i+1]},
+      {.fr = op_path[i], .to = op_path[i]}
+    };
+    for (vertex_t v = 0; v < n; v++) {
+      if (gsl_spmatrix_uint_get(players_state->graph->t, op_path[i], v) != NO_EDGE &&
+          !IS_WALL(players_state->graph, op_path[i], v) &&
+          gsl_spmatrix_uint_get(players_state->graph->t, v, op_path[i+1]) != NO_EDGE) {
+        e_tmp[1].to = v;
+      }
+    }
+
+    build_wall(players_state, e_tmp[0]);
+    build_wall(players_state, e_tmp[1]);
+
+    init_BFS(players_state, source, dist, parent_dir, color);
+    BFS(players_state, source, parent, parent_dir, dist, color);
+
+    if (dist[obj] > obj_dist_wall && dist[obj] < UINT_MAX) {
+      e[0] = e_tmp[0]; e[1] = e_tmp[1];
+      obj_dist_wall = dist[obj];
+    }
+
+    //reset wall
+    remove_wall(players_state, e_tmp[0]);
+    remove_wall(players_state, e_tmp[1]);
+  }
+
+  free(dist);
+  free(parent);
+  free(parent_dir);
+  free(color);
+  printf("no wall dist:%d, wall dist:%d\n", obj_dist, obj_dist_wall);
+
+  // Do not place wall if not worth it
+  if (abs((int)obj_dist_wall - (int)obj_dist) < WALL_DIFF)
+    return 0;
+
+  // updates world
+  build_wall(players_state, e[0]);
+  build_wall(players_state, e[1]);
+  global_glouton(players_state, path);
+
+  *move = (struct move_t){.t = WALL, .e = {e[0], e[1]}};
+  return 1;
 }

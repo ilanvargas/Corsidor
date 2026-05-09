@@ -173,8 +173,8 @@ int main(int argc, char* argv[]) {
 
     if (!move_is_valid(graph, &move, p_pos, p_prev_pos, p_walls)) {
       fprintf(stderr, "Invalid move by %s\n", color_str);
-      printf("%s plays {.t= %d, .m= %d ...} -> invalid\n", color_str, move.t,
-             move.m);
+      printf("%s plays {.t= %d, .m= %d e=((%d, %d),(%d, %d)} -> invalid\n", color_str, move.t,
+             move.m, move.e[0].fr, move.e[0].to, move.e[1].fr, move.e[1].to);
       printf("%s wins by invalid move!\n", color_op_str);  // Opponent wins
       break;
     }

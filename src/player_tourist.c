@@ -19,26 +19,37 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   // recalculate opponent position
   unsigned int op_id = 1 - players_state->id;
-  enum move_type_t op_type = previous_moves[op_id].t;
-  if (op_type == MOVE || op_type == JUMP)
+  if (previous_moves[op_id].t == MOVE || previous_moves[op_id].t == JUMP) {
     players_state->op_pos = previous_moves[op_id].m;
-
-  // calculate path
-  enum move_type_t my_type = previous_moves[players_state->id].t;
-  if (my_type == NO_TYPE)
-    global_glouton(players_state, path);
-
-  if (my_type == WATERLOO) {
-    build_wall(players_state, previous_moves[players_state->id].e[0]);
-
-    players_state->prev_dir = NO_EDGE;
-    players_state->pos = previous_moves[players_state->id].m;
-    global_glouton(players_state, path);
+    // update objetive_reached
+    for (unsigned int k = 0; k < players_state->graph->num_objectives; k++) {
+      if (players_state->graph->objectives[k] == previous_moves[op_id].m &&
+          !players_state->is_objective_reached[op_id][k]) {
+        players_state->is_objective_reached[op_id][k] = 1;
+        break;
+      }
+    }
   }
 
-  // follow path
-  struct move_t move = go_throught_path(players_state, path);
+  // calculate path
+  if (previous_moves[players_state->id].t == NO_TYPE)
+    global_glouton(players_state, path);
 
+  if (previous_moves[players_state->id].t == WATERLOO) {
+    if (players_state->prev_move.t != WALL) {
+      build_wall(players_state, previous_moves[players_state->id].e[0]);
+
+      players_state->prev_dir = NO_EDGE;
+      players_state->pos = previous_moves[players_state->id].m;
+      global_glouton(players_state, path);
+    }
+  }
+
+  struct move_t move; 
+  if (!wall_move(players_state, path, &move))
+    move = go_throught_path(players_state, path);
+
+  players_state->prev_move = move;
   return move;
 }
 
