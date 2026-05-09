@@ -296,10 +296,19 @@ struct move_t go_throught_path(struct players_state_t* players_state,
     if (path->j >= path->lens[path->i]) {
       path->i++;
       path->j = 0;
+
+      // update objetive_reached
+      for (unsigned int k = 0; k < players_state->graph->num_objectives; k++) {
+        if (players_state->graph->objectives[k] == v &&
+            !players_state->is_objective_reached[players_state->id][k]) {
+          players_state->is_objective_reached[players_state->id][k] = 1;
+          players_state->num_objective_to_reach--;
+          break;
+        }
+      }
       break;
     }
   }
-
 
   players_state->pos = v;
   return (struct move_t){.c = players_state->id, .t = MOVE, .m = v};
