@@ -52,7 +52,7 @@ test_waterloo: src/waterloo.o src/graph_impl.o test/test_waterloo.o
 test_move_valid: src/move_valid.o src/graph_impl.o test/test_move_valid.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-test_player_foenem_funcs: src/player_Foenem.o src/graph_impl.o src/move_valid.o test/test_player_foenem_funcs.o
+test_player_foenem_funcs: src/player_foenem.o src/graph_impl.o src/move_valid.o test/test_player_foenem_funcs.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test_graph_impl: src/graph_impl.o test/test_graph_impl.o
