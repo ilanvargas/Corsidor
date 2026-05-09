@@ -8,7 +8,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 				-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = scarecrow.so scarecrow_test.so tourist.so foenem.so
+CLIENTS = scarecrow.so tourist.so foenem.so
 TESTS = test_move_valid test_waterloo test_player_foenem_funcs
 
 all: build
@@ -21,9 +21,6 @@ server: src/graph_impl.o src/move_valid.o src/waterloo.o src/main.c
 client: $(CLIENTS)
 
 scarecrow.so: src/player_scarecrow.o
-	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
-
-scarecrow_test.so: src/player_scarecrow.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 foenem.so: src/graph_impl.o src/player_foenem.o src/move_valid.o
