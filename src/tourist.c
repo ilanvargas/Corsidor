@@ -4,6 +4,72 @@
 #include "player_tourist.h"
 
 #include <stdio.h>
+
+struct players_state_t* init_players_state(unsigned int player_id,
+                                           struct graph_t* graph) {
+  struct players_state_t* players_state =
+      malloc(sizeof(struct players_state_t));
+
+  players_state->id = player_id;
+  players_state->graph = graph;
+  players_state->pos = graph->start[player_id];
+  players_state->op_pos = graph->start[1 - player_id];
+  players_state->prev_dir = NO_EDGE;
+
+  players_state->is_objective_reached[player_id] =
+      malloc(graph->num_objectives * sizeof(int));
+  players_state->is_objective_reached[1 - player_id] =
+      malloc(graph->num_objectives * sizeof(int));
+  memset(players_state->is_objective_reached[player_id], 0,
+         graph->num_objectives * sizeof(int));
+  memset(players_state->is_objective_reached[1 - player_id], 0,
+         graph->num_objectives * sizeof(int));
+
+  players_state->num_objective_to_reach = graph->num_objectives;
+
+  return players_state;
+}
+
+void free_players_state(struct players_state_t* players_state) {
+  for (int i = 0; i < NUM_PLAYERS; i++)
+    free(players_state->is_objective_reached[i]);
+
+  gsl_spmatrix_uint_free(players_state->graph->t);
+  free(players_state->graph->objectives);
+  free(players_state->graph);
+
+  free(players_state);
+}
+
+struct path_t* init_path(struct graph_t* graph) {
+  struct path_t* path = malloc(sizeof(struct path_t));
+
+  // graph->num_objectives+1 because pos -> objectives -> starting point
+  int num_paths = graph->num_objectives + 1;
+  path->paths = malloc(num_paths * sizeof(vertex_t*));
+  for (unsigned int i = 0; i < graph->num_objectives + 1; i++) {
+    path->paths[i] = malloc((graph->t->size1) * sizeof(vertex_t));  // one path
+  }
+
+  path->dists = malloc(num_paths * sizeof(unsigned int));
+  path->lens = malloc(num_paths * sizeof(size_t));
+  path->i_objectives = malloc(graph->num_objectives * sizeof(unsigned int));
+
+  return path;
+}
+
+void free_path(struct path_t* path, struct players_state_t* players_state) {
+  for (unsigned int i = 0; i < players_state->graph->num_objectives + 1; i++)
+    free(path->paths[i]);
+  free(path->paths);
+
+  free(path->dists);
+  free(path->lens);
+  free(path->i_objectives);
+
+  free(path);
+}
+
 /* BFS helper
  * Enqueue and calulate dist, parent, parent_dir in vertex further than curr
  * neighbours Usefull for straight and 60 deg case

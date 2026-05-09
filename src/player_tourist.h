@@ -31,6 +31,19 @@ struct path_t {
   size_t j;        // step in path taking currently
 };
 
+/** Creates player_state_t based on graph */
+struct players_state_t* init_players_state(unsigned int player_id,
+                                           struct graph_t* graph);
+
+/** Free player_state_t */
+void free_players_state(struct players_state_t* players_state);
+
+/** Creates a struct path_t based on graph*/
+struct path_t* init_path(struct graph_t* graph);
+
+/* Free path */
+void free_path(struct path_t* path, struct players_state_t* players_state);
+
 /** Algorithm to carve a path from source throught all objectives
  * From p_pos creates path to nearest objectives then to nearest objective so on
  * Each path is a array in paths
