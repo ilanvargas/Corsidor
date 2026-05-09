@@ -41,9 +41,8 @@ void queue_deep(struct players_state_t* players_state,
 
 /** Calculates the difference of 2 dirs taking into accont circular propreties*/
 int dir_difference(enum dir_t prev_dir, enum dir_t next_dir) {
-  int diff = (prev_dir != NO_EDGE)
-                ? abs((int)prev_dir - (int)next_dir)
-                : UINT_MAX;
+  int diff =
+      (prev_dir != NO_EDGE) ? abs((int)prev_dir - (int)next_dir) : UINT_MAX;
   return (diff > NUM_DIRS / 2) ? NUM_DIRS - diff : diff;
 }
 
@@ -209,7 +208,7 @@ void global_glouton(struct players_state_t* players_state,
   int* color = malloc(n * sizeof(int));
 
   vertex_t source = players_state->pos;
-  for (unsigned int i = 0; i < num_objectives_to_reach+1; i++) {
+  for (unsigned int i = 0; i < num_objectives_to_reach + 1; i++) {
     init_BFS(players_state, source, dist, parent_dir, color);
 
     BFS(players_state, source, parent, parent_dir, dist, color);
@@ -247,16 +246,20 @@ struct move_t go_throught_path(struct players_state_t* players_state,
 
   int dir_diff = dir_difference(players_state->prev_dir, dir_go);
   int max_dist;
-  if (dir_diff == 0) max_dist = MAX_DIST_STRAIGHT;
-  else if (dir_diff == 1) max_dist = MAX_DIST_60;
-  else max_dist = 1;
+  if (dir_diff == 0)
+    max_dist = MAX_DIST_STRAIGHT;
+  else if (dir_diff == 1)
+    max_dist = MAX_DIST_60;
+  else
+    max_dist = 1;
 
   players_state->prev_dir = dir_go;
 
   vertex_t v = fr;
   for (int i = 0; i < max_dist; i++) {
-    next = path->paths[path->i][path->j];   
-    enum dir_t next_dir = gsl_spmatrix_uint_get(players_state->graph->t, v, next);
+    next = path->paths[path->i][path->j];
+    enum dir_t next_dir =
+        gsl_spmatrix_uint_get(players_state->graph->t, v, next);
 
     if (next_dir != dir_go)
       break;
@@ -266,7 +269,8 @@ struct move_t go_throught_path(struct players_state_t* players_state,
       // if we can jump
       if (i == 0) {
         for (vertex_t u = 0; u < n; u++) {
-          if (gsl_spmatrix_uint_get(players_state->graph->t, next, u) == dir_go) { 
+          if (gsl_spmatrix_uint_get(players_state->graph->t, next, u) ==
+              dir_go) {
             players_state->pos = u;
             global_glouton(players_state, path);
             return (struct move_t){.c = players_state->id, .t = JUMP, .m = u};
@@ -274,7 +278,8 @@ struct move_t go_throught_path(struct players_state_t* players_state,
         }
         // if not able to go in dir_go
         for (vertex_t u = 0; u < n; u++) {
-          if (gsl_spmatrix_uint_get(players_state->graph->t, next, u) != NO_EDGE) { 
+          if (gsl_spmatrix_uint_get(players_state->graph->t, next, u) !=
+              NO_EDGE) {
             players_state->pos = u;
             global_glouton(players_state, path);
             return (struct move_t){.c = players_state->id, .t = JUMP, .m = u};

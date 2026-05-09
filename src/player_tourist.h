@@ -49,7 +49,7 @@ void global_glouton(struct players_state_t* players_state, struct path_t* path);
  * Can recalculate path
  * Updates path.i path.j
  */
-struct move_t go_throught_path(struct players_state_t* players_state, 
+struct move_t go_throught_path(struct players_state_t* players_state,
                                struct path_t* path);
 
 #endif  // __PLAYER_TOURIST_H__
