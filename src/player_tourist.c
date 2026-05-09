@@ -37,18 +37,17 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 
   if (previous_moves[players_state->id].t == WATERLOO) {
     if (players_state->prev_move.t != WALL) {
-      build_wall(players_state, previous_moves[players_state->id].e[0]);
-
       players_state->prev_dir = NO_EDGE;
       players_state->pos = previous_moves[players_state->id].m;
       global_glouton(players_state, path);
     } else {
-      for (int i = 0; i < 2; i++) {
-        // invalide edge condition
-        if (previous_moves[players_state->id].e[i].to == UINT_MAX)
-          remove_wall(players_state, players_state->prev_move.e[i]);
-      }
+      remove_wall(players_state, players_state->prev_move.e[0]);
+      remove_wall(players_state, players_state->prev_move.e[1]);
     }
+
+    // if not INVALID_EDGE
+    if (previous_moves[players_state->id].e[0].fr != UINT_MAX)
+      build_wall(players_state, previous_moves[players_state->id].e[0]);
   }
 
   struct move_t move;
