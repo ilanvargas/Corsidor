@@ -318,3 +318,8 @@ struct move_t go_throught_path(struct players_state_t* players_state,
   players_state->pos = v;
   return (struct move_t){.c = players_state->id, .t = MOVE, .m = v};
 }
+
+void build_wall(struct players_state_t* players_state, struct edge_t e) {
+  gsl_spmatrix_uint_set(players_state->graph->t, e.fr, e.to, NO_EDGE);
+  gsl_spmatrix_uint_set(players_state->graph->t, e.to, e.fr, NO_EDGE);
+}
