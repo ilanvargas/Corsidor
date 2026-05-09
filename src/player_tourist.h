@@ -52,7 +52,7 @@ void global_glouton(struct players_state_t* players_state, struct path_t* path);
 struct move_t go_throught_path(struct players_state_t* players_state,
                                struct path_t* path);
 
-/** Block edge e 
+/** Block edge e
  * We represent a wall by removing an edge
  */
 void build_wall(struct players_state_t* players_state, struct edge_t e);
