@@ -52,13 +52,13 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   if (my_type == NO_TYPE)
     global_glouton(&players_state, &path);
 
-  // update map
   if (my_type == WATERLOO) {
     // represents wall by NO_EDGE (can't go throught)
     struct edge_t e = previous_moves[players_state.id].e[0];
     gsl_spmatrix_uint_set(players_state.graph->t, e.fr, e.to, NO_EDGE);
     gsl_spmatrix_uint_set(players_state.graph->t, e.to, e.fr, NO_EDGE);
 
+    players_state.prev_dir = NO_EDGE;
     players_state.pos = previous_moves[players_state.id].m;
     global_glouton(&players_state, &path);
   }
