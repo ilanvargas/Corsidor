@@ -16,6 +16,7 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
   players_state.graph = graph;
   players_state.pos = graph->start[player_id];
   players_state.op_pos = graph->start[1 - player_id];
+  players_state.prev_dir = NO_EDGE;
 
   players_state.is_objective_reached[player_id] =
       malloc(graph->num_objectives * sizeof(int));
@@ -28,45 +29,42 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 
   players_state.num_objective_to_reach = graph->num_objectives;
 
-  // graph->num_objectives+2 because pos -> objectives -> starting point
-  path.paths = malloc((graph->num_objectives + 2) * sizeof(vertex_t*));
-  for (unsigned int i = 0; i < graph->num_objectives + 2; i++)
+  // graph->num_objectives+1 because pos -> objectives -> starting point
+  int num_paths = graph->num_objectives + 1;
+  path.paths = malloc(num_paths * sizeof(vertex_t*));
+  for (unsigned int i = 0; i < graph->num_objectives + 1; i++) {
     path.paths[i] = malloc((graph->t->size1) * sizeof(vertex_t));  // one path
+  }
 
-  path.dists = malloc((graph->num_objectives + 1) * sizeof(unsigned int));
-  path.lens = malloc((graph->num_objectives + 1) * sizeof(size_t));
+  path.dists = malloc(num_paths * sizeof(unsigned int));
+  path.lens = malloc(num_paths * sizeof(size_t));
   path.i_objectives = malloc(graph->num_objectives * sizeof(unsigned int));
 }
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
-  if (previous_moves[1 - players_state.id].t == MOVE ||
-      previous_moves[1 - players_state.id].t == JUMP)
-    players_state.op_pos = previous_moves[1 - players_state.id].m;
+  // recalculate opponent position
+  unsigned int op_id = 1 - players_state.id;
+  enum move_type_t op_type = previous_moves[op_id].t;
+  if (op_type == MOVE || op_type == JUMP)
+    players_state.op_pos = previous_moves[op_id].m;
 
-  if (previous_moves[players_state.id].t == NO_TYPE ||
-      previous_moves[players_state.id].t == WATERLOO)
+  // calculate path
+  enum move_type_t my_type = previous_moves[players_state.id].t;
+  if (my_type == NO_TYPE)
     global_glouton(&players_state, &path);
 
-  // tacking a step throught the path
-  vertex_t m = path.paths[path.i][path.j++];
-  if (path.j >= path.lens[path.i]) {
-    path.i++;
-    path.j = 0;
+  if (my_type == WATERLOO) {
+    build_wall(&players_state, previous_moves[players_state.id].e[0]);
+
+    players_state.prev_dir = NO_EDGE;
+    players_state.pos = previous_moves[players_state.id].m;
+    global_glouton(&players_state, &path);
   }
 
-  // jump if opponent is blocking
-  if (players_state.op_pos == m) {
-    path.j++;
-    if (path.j >= path.lens[path.i]) {
-      path.i++;
-      path.j = 0;
-    }
+  // follow path
+  struct move_t move = go_throught_path(&players_state, &path);
 
-    return (struct move_t){
-        .c = players_state.id, .t = JUMP, .m = path.paths[path.i][path.j]};
-  }
-
-  return (struct move_t){.c = players_state.id, .t = MOVE, .m = m};
+  return move;
 }
 
 void finalize() {

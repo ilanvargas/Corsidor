@@ -6,8 +6,6 @@
 #include "move_check.h"
 #include "player.h"
 
-
-
 char const* p_name = "Foenem";
 unsigned int p_id;
 struct graph_t* p_graph;
@@ -427,14 +425,16 @@ static vertex_t get_next_move_vertex(vertex_t current_pos,
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   /*if (p_prev_pos == (vertex_t)INVALID_VERTEX) {
     p_prev_pos = p_pos;  // Initialize previous position on the first move
-    if (move_valid(p_graph, p_pos, p_pos+1, op_pos, p_prev_pos)) {
+    if (move_valid(p_graph, p_pos, p_pos + 1, op_pos, p_prev_pos)) {
       p_pos = p_pos + 1;
       return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos};
-    } else if (move_valid(p_graph, p_pos, p_pos-1, op_pos, p_prev_pos)) {
+    } else if (move_valid(p_graph, p_pos, p_pos - 1, op_pos, p_prev_pos)) {
       p_pos = p_pos - 1;
       return (struct move_t){.c = p_id, .t = MOVE, .m = p_pos};
     }
-    return (struct move_t){.c = p_id, .t = NO_TYPE};  // Initialize previous position on the first move
+    return (struct move_t){
+        .c = p_id,
+        .t = NO_TYPE};  // Initialize previous position on the first move
   }
   */
   if (previous_moves[1 - p_id].t == MOVE ||

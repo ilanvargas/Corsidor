@@ -12,6 +12,7 @@ struct players_state_t {
   struct graph_t* graph;  // game graph for player
   vertex_t pos;           // position player
   vertex_t op_pos;        // position opponent
+  enum dir_t prev_dir;    // previous dir taken
 
   int* is_objective_reached[NUM_PLAYERS];  // reached objectives for each player
   unsigned int num_objective_to_reach;     // number of objectives to reach
@@ -42,5 +43,18 @@ struct path_t {
  *  resets path.i path.j
  */
 void global_glouton(struct players_state_t* players_state, struct path_t* path);
+
+/** Advances throught path and returns a move
+ * Can modify move if opponent blocking
+ * Can recalculate path
+ * Updates path.i path.j
+ */
+struct move_t go_throught_path(struct players_state_t* players_state,
+                               struct path_t* path);
+
+/** Block edge e 
+ * We represent a wall by removing an edge
+ */
+void build_wall(struct players_state_t* players_state, struct edge_t e);
 
 #endif  // __PLAYER_TOURIST_H__
