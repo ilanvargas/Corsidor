@@ -8,6 +8,7 @@
 
 void djikstra_with_prev(struct graph_t* graph,
                         vertex_t source,
+                        vertex_t prev_pos,
                         unsigned int* dist,
                         vertex_t op_pos,
                         vertex_t* prev);
@@ -22,7 +23,7 @@ void test_dijkstra_with_prev() {
   }
   prev[10] = 5; /* previous position before 10 */
 
-  djikstra_with_prev(graph, 10, dist, 14, prev);
+  djikstra_with_prev(graph, 10, 5, dist, 14, prev);
 
   for (unsigned int i = 0; i < n; i++) {
     printf("Distance from 10 to %u: %u\n", i, dist[i]);
@@ -40,7 +41,7 @@ void test_dijkstra_with_prev_sixty_degree() {
   unsigned int* dist = malloc(n * sizeof(unsigned int));
   vertex_t* prev = malloc(n * sizeof(vertex_t));
 
-  djikstra_with_prev(graph, 10, dist, 14, prev);
+  djikstra_with_prev(graph, 10, 5, dist, 14, prev);
 
   printf("\t 60-degree acceleration: ");
   CMP_INT(dist[10], 1)
