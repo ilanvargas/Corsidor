@@ -9,7 +9,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
 				-Wl,--rpath=${GSL_PATH}/lib
 
 CLIENTS = scarecrow.so tourist.so foenem.so
-TESTS = test_move_valid test_waterloo 
+TESTS = test_move_valid test_waterloo test_player_foenem_funcs
 
 all: build
 
