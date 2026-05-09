@@ -12,6 +12,7 @@ struct players_state_t {
   struct graph_t* graph;  // game graph for player
   vertex_t pos;           // position player
   vertex_t op_pos;        // position opponent
+  enum dir_t prev_dir;    // previous dir taken
 
   int* is_objective_reached[NUM_PLAYERS];  // reached objectives for each player
   unsigned int num_objective_to_reach;     // number of objectives to reach
@@ -43,12 +44,12 @@ struct path_t {
  */
 void global_glouton(struct players_state_t* players_state, struct path_t* path);
 
-/** Modifies move if opponent is blocking path
- * Recalculate path if needed
- * Responsible for going forward (updating path.i, path.j)
+/** Advances throught path and returns a move
+ * Can modify move if opponent blocking
+ * Can recalculate path
+ * Updates path.i path.j
  */
-void go_throught_path(struct players_state_t* players_state,
-                      struct path_t* path,
-                      struct move_t* move);
+struct move_t go_throught_path(struct players_state_t* players_state, 
+                               struct path_t* path);
 
 #endif  // __PLAYER_TOURIST_H__

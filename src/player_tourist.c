@@ -16,6 +16,7 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
   players_state.graph = graph;
   players_state.pos = graph->start[player_id];
   players_state.op_pos = graph->start[1 - player_id];
+  players_state.prev_dir = NO_EDGE;
 
   players_state.is_objective_reached[player_id] =
       malloc(graph->num_objectives * sizeof(int));
@@ -52,9 +53,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
     global_glouton(&players_state, &path);
 
   // follow path
-  vertex_t m = path.paths[path.i][path.j];
-  struct move_t move = {.c = players_state.id, .t = MOVE, .m = m};
-  go_throught_path(&players_state, &path, &move);
+  struct move_t move = go_throught_path(&players_state, &path);
 
   return move;
 }

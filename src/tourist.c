@@ -25,7 +25,7 @@ void queue_deep(struct players_state_t* players_state,
           dir_u) {
         if (color[v] == 0) {
           dist[v] = dist[curr] + 1;
-          parent[v] = curr;
+          parent[v] = curr_straight;
           parent_dir[v] = parent_dir[curr];
 
           color[v] = 1;
@@ -37,6 +37,14 @@ void queue_deep(struct players_state_t* players_state,
       }
     }
   }
+}
+
+/** Calculates the difference of 2 dirs taking into accont circular propreties*/
+int dir_difference(enum dir_t prev_dir, enum dir_t next_dir) {
+  int diff = (prev_dir != NO_EDGE)
+                ? abs((int)prev_dir - (int)next_dir)
+                : UINT_MAX;
+  return (diff > NUM_DIRS / 2) ? NUM_DIRS - diff : diff;
 }
 
 /** BFS (parcours en largeur) algorithm to find distances from source
@@ -87,10 +95,7 @@ void BFS(struct players_state_t* players_state,
           queue[tail++] = u;
         }
 
-        int diff = (parent_dir[curr] != NO_EDGE)
-                       ? abs((int)parent_dir[curr] - (int)dir_u)
-                       : UINT_MAX;
-        int dir_diff = (diff > NUM_DIRS / 2) ? NUM_DIRS - diff : diff;
+        int dir_diff = dir_difference(parent_dir[curr], dir_u);
 
         // can advance up to MAX_DIST_STRAIGHT vertex straight ahead
         if (dir_diff == 0)
@@ -204,7 +209,7 @@ void global_glouton(struct players_state_t* players_state,
   int* color = malloc(n * sizeof(int));
 
   vertex_t source = players_state->pos;
-  for (unsigned int i = 0; i < num_objectives_to_reach; i++) {
+  for (unsigned int i = 0; i < num_objectives_to_reach+1; i++) {
     init_BFS(players_state, source, dist, parent_dir, color);
 
     BFS(players_state, source, parent, parent_dir, dist, color);
@@ -212,7 +217,6 @@ void global_glouton(struct players_state_t* players_state,
     vertex_t obj =
         next_objective(players_state, i, dist, num_objectives_to_reach,
                        is_objective_reached_path, path->i_objectives);
-    printf("next objective %d\n", obj);
     path_creation(players_state, path, source, obj, i, parent);
 
     // preparation for next path
@@ -234,78 +238,69 @@ void global_glouton(struct players_state_t* players_state,
   path->origin_source = source;
 }
 
-// find direction between 2 points
-enum dir_t find_dir(struct players_state_t* players_state,
-                    vertex_t fr,
-                    vertex_t to) {
-  unsigned int n = (unsigned int)sqrt((double)players_state->graph->t->size1);
-  int fr_i = fr / n, fr_j = fr % n;
-  int to_i = to / n, to_j = to % n;
-
-  int di = to_i - fr_i;
-  int dj = to_j - fr_j;
-
-  if (di < 0 && dj == 0)
-    return NW;
-  else if (di < 0 && dj < 0)
-    return NE;
-  else if (di == 0 && dj < 0)
-    return E;
-  else if (di > 0 && dj == 0)
-    return SE;
-  else if (di > 0 && dj > 0)
-    return SW;
-  else if (di == 0 && dj > 0)
-    return W;
-  else
-    return NO_EDGE;
-}
-
-void go_throught_path(struct players_state_t* players_state,
-                      struct path_t* path,
-                      struct move_t* move) {
+struct move_t go_throught_path(struct players_state_t* players_state,
+                               struct path_t* path) {
+  unsigned int n = players_state->graph->t->size1;
   vertex_t fr = players_state->pos;
-  vertex_t to = move->m;
+  vertex_t next = path->paths[path->i][path->j];
+  enum dir_t dir_go = gsl_spmatrix_uint_get(players_state->graph->t, fr, next);
 
-  enum dir_t dir_go = find_dir(players_state, fr, to);
+  int dir_diff = dir_difference(players_state->prev_dir, dir_go);
+  int max_dist;
+  if (dir_diff == 0) max_dist = MAX_DIST_STRAIGHT;
+  else if (dir_diff == 1) max_dist = MAX_DIST_60;
+  else max_dist = 1;
+
+  players_state->prev_dir = dir_go;
 
   vertex_t v = fr;
-  int i = 0;
-  while (i < MAX_DIST_STRAIGHT && v != to) {
-    vertex_t u = 0;
-    while (u < players_state->graph->t->size1 &&
-           gsl_spmatrix_uint_get(players_state->graph->t, v, u) != dir_go)
-      u++;
-    if (u >= players_state->graph->t->size1)
-      return;  // invalide vertex
+  for (int i = 0; i < max_dist; i++) {
+    next = path->paths[path->i][path->j];   
+    enum dir_t next_dir = gsl_spmatrix_uint_get(players_state->graph->t, v, next);
 
-    printf("forward %d %d\n", u, dir_go);
-    // If opponent in path, we recalculate
-    if (u == players_state->op_pos) {
-      printf("oponent blocking %d (%d)\n", u, players_state->op_pos);
+    if (next_dir != dir_go)
+      break;
+
+    // if opponent blocking path
+    if (next == players_state->op_pos) {
       // if we can jump
       if (i == 0) {
-        for (vertex_t s = 0; s < players_state->graph->t->size1; s++) {
-          if (gsl_spmatrix_uint_get(players_state->graph->t, u, s) == dir_go) {
-            *move = (struct move_t){.c = players_state->id, .t = JUMP, .m = s};
-            break;
+        for (vertex_t u = 0; u < n; u++) {
+          if (gsl_spmatrix_uint_get(players_state->graph->t, next, u) == dir_go) { 
+            players_state->pos = u;
+            global_glouton(players_state, path);
+            return (struct move_t){.c = players_state->id, .t = JUMP, .m = u};
           }
         }
-      } else {
-        *move = (struct move_t){.c = players_state->id, .t = MOVE, .m = v};
+        // if not able to go in dir_go
+        for (vertex_t u = 0; u < n; u++) {
+          if (gsl_spmatrix_uint_get(players_state->graph->t, next, u) != NO_EDGE) { 
+            players_state->pos = u;
+            global_glouton(players_state, path);
+            return (struct move_t){.c = players_state->id, .t = JUMP, .m = u};
+          }
+        }
       }
-      global_glouton(players_state, path);
-      return;
+      // just stops in from of player
+      else {
+        players_state->pos = v;
+        global_glouton(players_state, path);
+        break;
+      }
     }
 
-    v = u;
-    i++;
+    // move forward path
+    v = next;
+
+    path->j++;
+    if (path->j >= path->lens[path->i]) {
+      path->i++;
+      path->j = 0;
+      break;
+    }
   }
 
-  // ok to go throught plan
-  path->j++;
-  if (path->j >= path->lens[path->i]) {
-    path->i++;
-    path->j = 0;
-  }
+
+  players_state->pos = v;
+  return (struct move_t){.c = players_state->id, .t = MOVE, .m = v};
 }
