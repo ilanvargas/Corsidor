@@ -11,7 +11,6 @@
 #define INVALID_VERTEX -1
 #define INVALID_EDGE (struct edge_t){-1, -1}
 
-
 /** Difference in path direction. 0 -> straight, 1 -> 60°, else more */
 int path_dir_diff(struct graph_t* graph,
                   vertex_t prev,

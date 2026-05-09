@@ -30,10 +30,8 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 
   // graph->num_objectives+2 because pos -> objectives -> starting point
   path.paths = malloc((graph->num_objectives + 2) * sizeof(vertex_t*));
-  path.dirs = malloc((graph->num_objectives + 2) * sizeof(enum dir_t*));
   for (unsigned int i = 0; i < graph->num_objectives + 2; i++) {
     path.paths[i] = malloc((graph->t->size1) * sizeof(vertex_t));  // one path
-    path.dirs[i] = malloc((graph->t->size1) * sizeof(enum dir_t)); // its dirs
   }
 
   path.dists = malloc((graph->num_objectives + 1) * sizeof(unsigned int));
@@ -50,19 +48,13 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
 
   // calculate path
   enum move_type_t my_type = previous_moves[players_state.id].t;
-  if (my_type == NO_TYPE || my_type == WATERLOO)
+  if (my_type == NO_TYPE)
     global_glouton(&players_state, &path);
 
   // follow path
   vertex_t m = path.paths[path.i][path.j];
   struct move_t move = {.c = players_state.id, .t = MOVE, .m = m};
-  
-  // go forward
-  path.j++;
-  if (path.j >= path.lens[path.i]) {
-    path.i++;
-    path.j = 0;
-  }
+  go_throught_path(&players_state, &path, &move);
 
   return move;
 }

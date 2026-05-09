@@ -20,7 +20,6 @@ struct players_state_t {
 // path defintion
 struct path_t {
   vertex_t** paths;            // one path = path from a objective to an other
-  enum dir_t** dirs;           // direction taken, useful for recontruction
   unsigned int* dists;         // distance of each path
   size_t* lens;                // size of each path
   unsigned int* i_objectives;  // index objectives in order reached by path
@@ -45,10 +44,10 @@ struct path_t {
 void global_glouton(struct players_state_t* players_state, struct path_t* path);
 
 /** Modifies move if opponent is blocking path
- * Can recalculate path
+ * Recalculate path if needed
  * Responsible for going forward (updating path.i, path.j)
  */
-void go_throught_path(struct players_state_t* players_state, 
+void go_throught_path(struct players_state_t* players_state,
                       struct path_t* path,
                       struct move_t* move);
 
