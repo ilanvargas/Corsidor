@@ -1,5 +1,5 @@
-#GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
-GSL_PATH ?= $(HOME)/corsidor-S6/gsl
+GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
+#GSL_PATH ?= $(HOME)/corsidor-S6/gsl
 DOT ?= dot
 #DOT ?= $(HOME)/corsidor-S6/graphviz/bin/dot
 
@@ -8,7 +8,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 				-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = tourist.so zscarecrow.so
+CLIENTS = tourist.so zscarecrow.so foenem.so
 TESTS = test_move_valid test_waterloo test_player_foenem_funcs
 
 all: build
