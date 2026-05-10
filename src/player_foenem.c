@@ -485,19 +485,6 @@ static vertex_t get_next_move_vertex(struct graph_t* graph,
   return next_move;
 }
 
-static vertex_t get_any_valid_adjacent_move(struct graph_t* graph,
-                                            vertex_t current_pos,
-                                            vertex_t prev_pos,
-                                            vertex_t op_pos) {
-  unsigned int n = graph->t->size1;
-  for (unsigned int v = 0; v < n; v++) {
-    if (IS_ADJACENT(graph, current_pos, v) &&
-        move_valid(graph, v, current_pos, op_pos, prev_pos)) {
-      return v;
-    }
-  }
-  return UINT_MAX;
-}
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   if (prev_pos[p_id] == (vertex_t)INVALID_VERTEX) {
