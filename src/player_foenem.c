@@ -485,7 +485,6 @@ static vertex_t get_next_move_vertex(struct graph_t* graph,
   return next_move;
 }
 
-
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   if (prev_pos[p_id] == (vertex_t)INVALID_VERTEX) {
     prev_pos[p_id] =
