@@ -1,5 +1,5 @@
-GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
-#GSL_PATH ?= $(HOME)/corsidor-S6/gsl
+#GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
+GSL_PATH ?= $(HOME)/corsidor-S6/gsl
 DOT ?= dot
 #DOT ?= $(HOME)/corsidor-S6/graphviz/bin/dot
 
@@ -8,7 +8,7 @@ LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 				-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = scarecrow.so tourist.so
+CLIENTS = tourist.so zscarecrow.so
 TESTS = test_move_valid test_waterloo test_player_foenem_funcs
 
 all: build
@@ -20,13 +20,13 @@ server: src/graph_impl.o src/move_valid.o src/waterloo.o src/main.c
 
 client: $(CLIENTS)
 
-scarecrow.so: src/player_scarecrow.o
+tourist.so: src/player_tourist.o src/tourist.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 foenem.so: src/graph_impl.o src/player_foenem.o src/move_valid.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
-tourist.so: src/player_tourist.o src/tourist.o
+zscarecrow.so: src/player_scarecrow.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 dot_test: test_graph_impl
