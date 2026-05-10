@@ -96,7 +96,7 @@ void test_find_best_wall() {
 
 int main() {
   RUN(test_dijkstra_with_prev())
-  //RUN(test_find_wall_candidate_for_edge())
+  // RUN(test_find_wall_candidate_for_edge())
   RUN(test_evaluate_wall_gain())
   RUN(test_find_best_wall())
 

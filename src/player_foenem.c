@@ -38,20 +38,24 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
   }
 }
 
-
-vertex_t* valid_adjacent_vertices(struct graph_t* graph, vertex_t pos, vertex_t op_pos) {
+vertex_t* valid_adjacent_vertices(struct graph_t* graph,
+                                  vertex_t pos,
+                                  vertex_t op_pos) {
   unsigned int n = graph->t->size1;
-  vertex_t* valid_vertices = malloc(NUM_DIRS * sizeof(vertex_t));  // Max 5 adjacent vertices in a hex grid
+  vertex_t* valid_vertices = malloc(
+      NUM_DIRS * sizeof(vertex_t));  // Max 5 adjacent vertices in a hex grid
   unsigned int i = pos / n;
   unsigned int j = pos % n;
   for (unsigned int d = 0; d < NUM_DIRS; d++) {
-    valid_vertices[d] = INVALID_VERTEX; // Initialize as invalid
+    valid_vertices[d] = INVALID_VERTEX;  // Initialize as invalid
   }
-  vertex_t directions[NUM_DIRS] = {(i - 1) * n + (j - 1), (i - 1) * n + j, i * n + (j + 1),
-                                (i + 1) * n + (j + 1), (i + 1) * n + j, i * n + (j - 1)};
+  vertex_t directions[NUM_DIRS] = {(i - 1) * n + (j - 1), (i - 1) * n + j,
+                                   i * n + (j + 1),       (i + 1) * n + (j + 1),
+                                   (i + 1) * n + j,       i * n + (j - 1)};
   for (unsigned int d = 0; d < NUM_DIRS; d++) {
     vertex_t next_pos = (vertex_t)directions[d];
-    if (IS_VERTEX_VALID(graph, next_pos) && !IS_WALL(graph, pos, next_pos) && next_pos != op_pos) {
+    if (IS_VERTEX_VALID(graph, next_pos) && !IS_WALL(graph, pos, next_pos) &&
+        next_pos != op_pos) {
       valid_vertices[d] = next_pos;
     }
   }
@@ -91,7 +95,7 @@ void djikstra_with_prev(struct graph_t* graph,
     visited[i] = 0;
   }
 
-  for (unsigned int iter = 0; iter < n; iter++) { 
+  for (unsigned int iter = 0; iter < n; iter++) {
     vertex_t u = UINT_MAX;
     unsigned int best_dist = UINT_MAX;
 
@@ -107,9 +111,10 @@ void djikstra_with_prev(struct graph_t* graph,
     }
 
     visited[u] = 1;
-    if (prev[u] == (vertex_t)INVALID_VERTEX) {  // If we are at the starting position, we
-                                    // can consider all adjacent vertices as
-                                    // reachable with distance 1
+    if (prev[u] ==
+        (vertex_t)INVALID_VERTEX) {  // If we are at the starting position, we
+                                     // can consider all adjacent vertices as
+                                     // reachable with distance 1
       vertex_t* valid_vertices = valid_adjacent_vertices(graph, u, op_pos);
       for (unsigned int d = 0; d < NUM_DIRS; d++) {
         vertex_t v = valid_vertices[d];
@@ -170,7 +175,7 @@ static unsigned int get_closest_objective(struct graph_t* graph,
 
   for (unsigned int i = 0; i < graph->num_objectives; i++) {
     if (objective_reached[p_id][i]) {
-      continue; // Skip already reached objectives 
+      continue;  // Skip already reached objectives
     }
     vertex_t objective = graph->objectives[i];
     unsigned int effective_dist = dist[objective];
@@ -214,7 +219,8 @@ static int build_shortest_path(struct graph_t* graph,
   vertex_t* prev = malloc(n * sizeof(vertex_t));
 
   djikstra_with_prev(graph, source, prev_pos, dist, opp_pos, prev);
-  if (target == UINT_MAX || dist[target] == UINT_MAX) {  // No path exists or invalid target
+  if (target == UINT_MAX ||
+      dist[target] == UINT_MAX) {  // No path exists or invalid target
     free(dist);
     free(prev);
     *path_len = 0;
@@ -231,7 +237,7 @@ static int build_shortest_path(struct graph_t* graph,
   unsigned int len = 0;
   vertex_t cur = target;
   while (cur != source) {  // Trace back from target to source using prev array
-    if (cur == UINT_MAX || len >= n) { // Avoid infinite loop
+    if (cur == UINT_MAX || len >= n) {  // Avoid infinite loop
       free(dist);
       free(prev);
       *path_len = 0;
@@ -248,7 +254,6 @@ static int build_shortest_path(struct graph_t* graph,
     path[i] = path[len - 1 - i];
     path[len - 1 - i] = tmp;
   }
-
 
   /* skip the first movements if we can do an acceleration */
   unsigned int next_index = 0;
@@ -324,22 +329,24 @@ unsigned int evaluate_wall_gain(struct graph_t* graph,
   set_wall_mask(graph, wall[1].fr, wall[1].to, 0);
   set_wall_mask(graph, wall[1].to, wall[1].fr, 0);
 
-  if (new_dist == UINT_MAX) { 
-    return 0; // Opponent cannot reach checkpoint, but we consider the gain as 0 to avoid placing walls that would completely block the opponent
+  if (new_dist == UINT_MAX) {
+    return 0;  // Opponent cannot reach checkpoint, but we consider the gain as
+               // 0 to avoid placing walls that would completely block the
+               // opponent
   }
   return (new_dist > original_dist) ? new_dist - original_dist : 0;
 }
 
 /*
-  * Find candidate walls to place for blocking the adjacent edges to source or target
-  * Returns the number of valid candidate wall placements found, and fills the
-  * candidate array with the corresponding edges for each valid placement.
-  */
+ * Find candidate walls to place for blocking the adjacent edges to source or
+ * target Returns the number of valid candidate wall placements found, and fills
+ * the candidate array with the corresponding edges for each valid placement.
+ */
 int find_walls_candidate_for_edge(struct graph_t* graph,
-                                 vertex_t source,
-                                 vertex_t op_pos,
-                                 vertex_t target,
-                                 struct edge_t candidate[2*NUM_DIRS][2]) {
+                                  vertex_t source,
+                                  vertex_t op_pos,
+                                  vertex_t target,
+                                  struct edge_t candidate[2 * NUM_DIRS][2]) {
   vertex_t* adj_src = valid_adjacent_vertices(graph, source, op_pos);
   vertex_t* adj_target = valid_adjacent_vertices(graph, target, op_pos);
   int found_candidate = 0;
@@ -354,16 +361,16 @@ int find_walls_candidate_for_edge(struct graph_t* graph,
         struct edge_t e2 = {source, adj_src[0]};
         candidate[d1][0] = e1;
         candidate[d1][1] = e2;
-        found_candidate++; 
+        found_candidate++;
       }
       break;
     }
-    if (adj_src[d1+1] != (vertex_t)INVALID_VERTEX) {
+    if (adj_src[d1 + 1] != (vertex_t)INVALID_VERTEX) {
       struct edge_t e1 = {source, adj_source};
-      struct edge_t e2 = {source, adj_src[d1+1]};
+      struct edge_t e2 = {source, adj_src[d1 + 1]};
       candidate[d1][0] = e1;
       candidate[d1][1] = e2;
-      found_candidate++; 
+      found_candidate++;
     }
   }
   for (unsigned int d2 = 0; d2 < NUM_DIRS; d2++) {
@@ -377,16 +384,16 @@ int find_walls_candidate_for_edge(struct graph_t* graph,
         struct edge_t e2 = {target, adj_target[0]};
         candidate[NUM_DIRS + d2][0] = e1;
         candidate[NUM_DIRS + d2][1] = e2;
-        found_candidate++; 
+        found_candidate++;
       }
       break;
     }
-    if (adj_target[d2+1] != (vertex_t)INVALID_VERTEX) {
+    if (adj_target[d2 + 1] != (vertex_t)INVALID_VERTEX) {
       struct edge_t e1 = {target, adj_tgt};
-      struct edge_t e2 = {target, adj_target[d2+1]};
+      struct edge_t e2 = {target, adj_target[d2 + 1]};
       candidate[NUM_DIRS + d2][0] = e1;
       candidate[NUM_DIRS + d2][1] = e2;
-      found_candidate++; 
+      found_candidate++;
     }
   }
   free(adj_src);
@@ -413,7 +420,7 @@ void find_best_wall(struct graph_t* graph,
   unsigned int original_dist = opp_dist[opp_checkpoint];
   free(opp_dist);
 
-  struct edge_t candidate[2*NUM_DIRS][2];
+  struct edge_t candidate[2 * NUM_DIRS][2];
   *gain_ptr = 0;
   best_wall[0].fr = UINT_MAX;
   best_wall[0].to = UINT_MAX;
@@ -430,16 +437,16 @@ void find_best_wall(struct graph_t* graph,
     return;
   }
   /*
-    * We will try placing walls on the edges adjacent to the opponent's position and
-    * the checkpoint, 
-    * and evaluate the gain for each candidate wall
-    * placement.
-  */
-  int found_candidates = find_walls_candidate_for_edge(graph, opp_pos, pos, opp_checkpoint, candidate);
+   * We will try placing walls on the edges adjacent to the opponent's position
+   * and the checkpoint, and evaluate the gain for each candidate wall
+   * placement.
+   */
+  int found_candidates = find_walls_candidate_for_edge(
+      graph, opp_pos, pos, opp_checkpoint, candidate);
   for (int i = 0; i < found_candidates; i++) {
     if (candidate[i][0].fr == UINT_MAX || candidate[i][0].to == UINT_MAX ||
         candidate[i][1].fr == UINT_MAX || candidate[i][1].to == UINT_MAX) {
-      continue; // Skip invalid candidates
+      continue;  // Skip invalid candidates
     }
     unsigned int gain =
         evaluate_wall_gain(graph, candidate[i], pos, opp_pos, opp_prev_pos,
@@ -494,11 +501,14 @@ static vertex_t get_any_valid_adjacent_move(struct graph_t* graph,
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   if (prev_pos[p_id] == (vertex_t)INVALID_VERTEX) {
-    prev_pos[p_id] = pos[p_id];  // Initialize previous position on the first move
-    if (move_valid(p_graph, pos[p_id], pos[p_id] + 1, pos[1 - p_id], prev_pos[p_id])) {
+    prev_pos[p_id] =
+        pos[p_id];  // Initialize previous position on the first move
+    if (move_valid(p_graph, pos[p_id], pos[p_id] + 1, pos[1 - p_id],
+                   prev_pos[p_id])) {
       pos[p_id] = pos[p_id] + 1;
       return (struct move_t){.c = p_id, .t = MOVE, .m = pos[p_id]};
-    } else if (move_valid(p_graph, pos[p_id], pos[p_id] - 1, pos[1 - p_id], prev_pos[p_id])) {
+    } else if (move_valid(p_graph, pos[p_id], pos[p_id] - 1, pos[1 - p_id],
+                          prev_pos[p_id])) {
       pos[p_id] = pos[p_id] - 1;
       return (struct move_t){.c = p_id, .t = MOVE, .m = pos[p_id]};
     }
@@ -506,7 +516,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
         .c = p_id,
         .t = NO_TYPE};  // Initialize previous position on the first move
   }
-  
+
   if (previous_moves[1 - p_id].t == MOVE ||
       previous_moves[1 - p_id].t == JUMP) {
     prev_pos[1 - p_id] = pos[1 - p_id];
