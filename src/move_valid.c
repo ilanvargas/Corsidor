@@ -44,17 +44,20 @@ int is_straigh_clear_path(struct graph_t* graph,
                           vertex_t op,
                           enum dir_t dir_go,
                           int max_dist) {
+  gsl_spmatrix_uint* csr = graph->t;
+
   vertex_t v = fr;
   int i = 0;
   while (i < max_dist && v != to) {
     // Find neighbour in dir_go direction from v
-    // General implementation for every graph type
-    vertex_t u = 0;
-    while (IS_VERTEX_VALID(graph, u) &&
-           gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
-      u++;
-    if (!IS_VERTEX_VALID(graph, u) ||
-        gsl_spmatrix_uint_get(graph->t, v, u) != dir_go)
+    vertex_t u = UINT_MAX;
+    for (int k = csr->p[v]; k < csr->p[v + 1]; k++) {
+      if (csr->data[k] == dir_go) {
+        u = csr->i[k];
+        break;
+      }
+    }
+    if (u == UINT_MAX)
       return 0;
 
     // If opponent in path

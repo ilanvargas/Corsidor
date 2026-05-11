@@ -1,15 +1,15 @@
-GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
-#GSL_PATH ?= $(HOME)/corsidor-S6/gsl
-DOT ?= dot
-#DOT ?= $(HOME)/corsidor-S6/graphviz/bin/dot
+#GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
+GSL_PATH ?= $(HOME)/corsidor-S6/gsl
+#DOT ?= dot
+DOT ?= $(HOME)/corsidor-S6/graphviz/bin/dot
 
 CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include -I./src
 LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
         -L$(GSL_PATH)/lib -L$(GSL_PATH)/lib64 \
 				-Wl,--rpath=${GSL_PATH}/lib
 
-CLIENTS = tourist.so zscarecrow.so foenem.so
-TESTS = test_move_valid test_waterloo test_player_foenem_funcs
+CLIENTS = tourist.so zscarecrow.so 
+TESTS = test_move_valid test_waterloo
 
 all: build
 
@@ -39,7 +39,6 @@ dot_test: test_graph_impl
 test: build_tests
 	./test_move_valid
 	./test_waterloo
-	./test_player_foenem_funcs
 
 build_tests: $(TESTS)
 
@@ -47,9 +46,6 @@ test_waterloo: src/waterloo.o src/graph_impl.o test/test_waterloo.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test_move_valid: src/move_valid.o src/graph_impl.o test/test_move_valid.o
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
-
-test_player_foenem_funcs: src/player_foenem.o src/graph_impl.o src/move_valid.o test/test_player_foenem_funcs.o
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 test_graph_impl: src/graph_impl.o test/test_graph_impl.o

@@ -17,6 +17,8 @@ int is_visited_objectives(struct graph_t* graph, int* is_visited) {
  * Deep search
  */
 int is_block_op(struct graph_t* graph, struct move_t* move, vertex_t op) {
+  gsl_spmatrix_uint* csr = graph->t;
+
   build_wall(graph, move->e);  // to be removed after
 
   int is_visited[graph->t->size1];
@@ -28,33 +30,26 @@ int is_block_op(struct graph_t* graph, struct move_t* move, vertex_t op) {
   is_visited[op] = 1;
   while (top >= 0 && !is_visited_objectives(graph, is_visited)) {
     vertex_t current = pile[top--];
-    for (vertex_t u = 0; u < graph->t->size1; u++) {
-      if (IS_ADJACENT(graph, current, u) && !IS_WALL(graph, current, u) &&
-          !is_visited[u]) {
+
+    vertex_t u;
+    for (int k = csr->p[current]; k < csr->p[current + 1]; k++) {
+      u = csr->i[k];
+      if (!IS_WALL(csr->data[k]) && !is_visited[u]) {
         is_visited[u] = 1;
         pile[++top] = u;
       }
     }
   }
 
-  // remove walls
-  gsl_spmatrix_uint_set(
-      graph->t, move->e[0].fr, move->e[0].to,
-      gsl_spmatrix_uint_get(graph->t, move->e[0].fr, move->e[0].to) &
-          ~WALL_MASK);
-  gsl_spmatrix_uint_set(
-      graph->t, move->e[0].to, move->e[0].fr,
-      gsl_spmatrix_uint_get(graph->t, move->e[0].to, move->e[0].fr) &
-          ~WALL_MASK);
-
-  gsl_spmatrix_uint_set(
-      graph->t, move->e[1].fr, move->e[1].to,
-      gsl_spmatrix_uint_get(graph->t, move->e[1].fr, move->e[1].to) &
-          ~WALL_MASK);
-  gsl_spmatrix_uint_set(
-      graph->t, move->e[1].to, move->e[1].fr,
-      gsl_spmatrix_uint_get(graph->t, move->e[1].to, move->e[1].fr) &
-          ~WALL_MASK);
+  // Remove wall
+  unsigned int* val0_fr = get_edge(csr, move->e[0].fr, move->e[0].to);
+  unsigned int* val0_to = get_edge(csr, move->e[0].to, move->e[0].fr);
+  unsigned int* val1_fr = get_edge(csr, move->e[1].fr, move->e[1].to);
+  unsigned int* val1_to = get_edge(csr, move->e[1].to, move->e[1].fr);
+  *val0_to &= ~WALL_MASK;
+  *val0_fr &= ~WALL_MASK;
+  *val1_to &= ~WALL_MASK;
+  *val1_fr &= ~WALL_MASK;
 
   return !is_visited_objectives(graph, is_visited);
 }
@@ -62,6 +57,7 @@ int is_block_op(struct graph_t* graph, struct move_t* move, vertex_t op) {
 int convert_waterloo(struct graph_t* graph,
                      struct move_t* move,
                      vertex_t p_pos[NUM_PLAYERS]) {
+  gsl_spmatrix_uint* csr = graph->t;
   vertex_t fr = p_pos[move->c];
   vertex_t op = p_pos[1 - move->c];
   vertex_t to = move->m;
@@ -78,15 +74,18 @@ int convert_waterloo(struct graph_t* graph,
       while (i < MAX_DIST && v != to) {
         // Find neighbour in dir_go direction from v
         // General implementation for every graph type
-        vertex_t u = 0;
-        while (IS_VERTEX_VALID(graph, u) &&
-               (gsl_spmatrix_uint_get(graph->t, v, u) & ~WALL_MASK) != dir_go)
-          u++;
-        if (!IS_VERTEX_VALID(graph, u))
-          return 0;
+        vertex_t u;
+        unsigned int val_u = NO_EDGE;
+        for (int k = csr->p[v]; k < csr->p[v + 1]; k++) {
+          if ((csr->data[k] & ~WALL_MASK) == dir_go) {
+            val_u = csr->data[k];
+            u = csr->i[k];
+            break;
+          }
+        }
 
         // If wall blocking
-        if (IS_WALL(graph, v, u)) {
+        if (IS_WALL(val_u)) {
           move->t = WATERLOO;
           move->m = v;
           move->e[0] = (struct edge_t){v, u};
@@ -102,14 +101,14 @@ int convert_waterloo(struct graph_t* graph,
       return 0;
 
     case JUMP:
-      if (IS_WALL(graph, fr, op)) {
+      if (IS_WALL(gsl_spmatrix_uint_get(graph->t, fr, op))) {
         move->t = WATERLOO;
         move->m = fr;
         move->e[0] = (struct edge_t){fr, op};
         move->e[1] = INVALID_EDGE;
 
         return 1;
-      } else if (IS_WALL(graph, op, to)) {
+      } else if (IS_WALL(gsl_spmatrix_uint_get(graph->t, op, to))) {
         move->t = WATERLOO;
         move->m = fr;
         move->e[0] = (struct edge_t){op, to};
@@ -120,12 +119,12 @@ int convert_waterloo(struct graph_t* graph,
         return 0;
 
     case WALL:
-      if (IS_WALL(graph, move->e[0].fr, move->e[0].to)) {
+      if (IS_WALL(gsl_spmatrix_uint_get(graph->t, move->e[0].fr, move->e[0].to))) {
         move->t = WATERLOO;
         move->e[1] = INVALID_EDGE;
 
         return 1;
-      } else if (IS_WALL(graph, move->e[1].fr, move->e[1].to)) {
+      } else if (IS_WALL(gsl_spmatrix_uint_get(graph->t, move->e[1].fr, move->e[1].to))) {
         move->t = WATERLOO;
         move->e[0] = move->e[1];
         move->e[1] = INVALID_EDGE;

@@ -13,7 +13,6 @@ size_t f_init_parallelogram(size_t m, struct graph_t* graph) {
 
   graph->num_vertices = m * m;
   graph->num_edges = 3U * graph->num_vertices - 4U * m + 1;
-  graph->t = gsl_spmatrix_uint_alloc(graph->num_vertices, graph->num_vertices);
 
   graph->start[BLACK] = m * (m / 2);
   graph->start[WHITE] = m * (m / 2) + m - 1;
@@ -36,7 +35,6 @@ size_t f_init_triangular(size_t m, struct graph_t* graph) {
 
   graph->num_vertices = 3 * m * m - 3 * m + 1;
   graph->num_edges = 9 * m * m - 15 * m + 6;
-  graph->t = gsl_spmatrix_uint_alloc(n * n, n * n);
 
   graph->start[BLACK] = n * (n / 2);
   graph->start[WHITE] = n * (n / 2) + n - 1;
@@ -85,6 +83,7 @@ struct graph_t* graph_init(size_t m, enum graph_type_t type) {
       return NULL;
   }
 
+  gsl_spmatrix_uint* t = gsl_spmatrix_uint_alloc(n * n, n * n);
   int dir_i[] = {0, -1, -1, 0, 1, 1, 0};
   int dir_j[] = {0, 0, -1, -1, 0, 1, 1};
 
@@ -94,14 +93,16 @@ struct graph_t* graph_init(size_t m, enum graph_type_t type) {
         int ii = (int)i + dir_i[d];
         int jj = (int)j + dir_j[d];
         if (ii >= 0 && (size_t)ii < n && jj >= 0 && (size_t)jj < n) {
-          gsl_spmatrix_uint_set(
-              graph->t, i * n + j, (size_t)ii * n + (size_t)jj,
-              (f_cond(m, i, j) && f_cond(m, (size_t)ii, (size_t)jj)) ? d : 0);
+          if (f_cond(m, i, j) && f_cond(m, (size_t)ii, (size_t)jj))
+            gsl_spmatrix_uint_set(
+              t, i * n + j, (size_t)ii * n + (size_t)jj, d);
         }
       }
     }
   }
 
+  graph->t = gsl_spmatrix_uint_crs(t);
+  free(t);
   return graph;
 }
 
@@ -133,21 +134,28 @@ enum dir_t translate_dir(int di, int dj) {
     return NO_EDGE;
 }
 
+unsigned int* get_edge(gsl_spmatrix_uint* csr, vertex_t fr, vertex_t to) {
+    for (int k = csr->p[fr]; k < csr->p[fr + 1]; k++) {
+        if ((vertex_t)csr->i[k] == to)
+            return &csr->data[k];
+    }
+    return NULL;
+}
+
 void build_wall(struct graph_t* graph, struct edge_t e[2]) {
   // Wall needs to be read on both sides
-  gsl_spmatrix_uint_set(
-      graph->t, e[0].fr, e[0].to,
-      gsl_spmatrix_uint_get(graph->t, e[0].fr, e[0].to) | WALL_MASK);
-  gsl_spmatrix_uint_set(
-      graph->t, e[0].to, e[0].fr,
-      gsl_spmatrix_uint_get(graph->t, e[0].to, e[0].fr) | WALL_MASK);
+  gsl_spmatrix_uint* csr = graph->t;
 
-  gsl_spmatrix_uint_set(
-      graph->t, e[1].fr, e[1].to,
-      gsl_spmatrix_uint_get(graph->t, e[1].fr, e[1].to) | WALL_MASK);
-  gsl_spmatrix_uint_set(
-      graph->t, e[1].to, e[1].fr,
-      gsl_spmatrix_uint_get(graph->t, e[1].to, e[1].fr) | WALL_MASK);
+  unsigned int* val0_fr = get_edge(csr, e[0].fr, e[0].to);
+  unsigned int* val0_to = get_edge(csr, e[0].to, e[0].fr);
+
+  unsigned int* val1_fr = get_edge(csr, e[1].fr, e[1].to);
+  unsigned int* val1_to = get_edge(csr, e[1].to, e[1].fr);
+
+  *val0_to |= WALL_MASK;
+  *val0_fr |= WALL_MASK;
+  *val1_to |= WALL_MASK;
+  *val1_fr |= WALL_MASK;
 }
 
 // --- Functions for graph representation ---
@@ -167,22 +175,24 @@ void graph_show_style(struct graph_t* graph, FILE* fptr) {
 void graph_show(struct graph_t* graph, char* file_name) {
   FILE* fptr = fopen(file_name, "w");
 
-  fprintf(fptr, "graph G { \n");
+  fprintf(fptr, "graph G {\n");
 
   graph_show_style(graph, fptr);
 
-  size_t N = graph->t->size1;
-  for (size_t i = 0; i < N; i++) {
-    for (size_t j = i; j < N; j++) {
-      if (gsl_spmatrix_uint_get(graph->t, i, j) != NO_EDGE) {
-        if (IS_WALL(graph, i, j))
-          fprintf(fptr, "\"%ld\" -- \"%ld\"[color=red];\n", i, j);
+  gsl_spmatrix_uint* csr = graph->t;
+  for (size_t i = 0; i < csr->size1; i++) {
+    for (int k = csr->p[i]; k < csr->p[i + 1]; k++) {
+      size_t j = csr->i[k];
+
+      if (j >= i) {
+        if (IS_WALL(csr->data[k]))
+          fprintf(fptr, "\"%zu\" -- \"%zu\" [color=red];\n", i, j);
         else
-          fprintf(fptr, "\"%ld\" -- \"%ld\";\n", i, j);
+          fprintf(fptr, "\"%zu\" -- \"%zu\";\n", i, j);
       }
     }
   }
 
-  fprintf(fptr, "}");
+  fprintf(fptr, "}\n");
   fclose(fptr);
 }

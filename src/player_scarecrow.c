@@ -2,9 +2,6 @@
 
 #include "player.h"
 
-#define IS_ADJACENT(graph, u, v) \
-  (gsl_spmatrix_uint_get((graph)->t, (u), (v)) != NO_EDGE)
-
 unsigned int p_id;
 struct graph_t* p_graph;
 vertex_t p_pos;
@@ -26,17 +23,21 @@ void initialize(unsigned int player_id, struct graph_t* graph) {
 }
 
 struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
+  gsl_spmatrix_uint* csr = p_graph->t;
+
   if (previous_moves[1 - p_id].t == MOVE || previous_moves[1 - p_id].t == JUMP)
     op_pos = previous_moves[1 - p_id].m;
 
   if (previous_moves[p_id].t == WATERLOO)
     p_pos = previous_moves[p_id].m;
 
-  unsigned int u = 0;
-  for (unsigned int v = 0; v < p_graph->t->size1; v++) {
-    if (IS_ADJACENT(p_graph, p_pos, v) && op_pos != v) {
+  vertex_t u = p_pos;
+  for (int k = csr->p[p_pos]; k < csr->p[p_pos + 1]; k++) {
+    vertex_t v = csr->i[k];
+
+    if (op_pos != v) {
       u = v;
-      if (is_visited[v] == 0) {
+      if (!is_visited[v]) {
         is_visited[v] = (v != p_graph->start[p_id]) ? 1 : 0;
         p_pos = v;
         return (struct move_t){.c = p_id, .t = MOVE, .m = v};
@@ -44,8 +45,10 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
     }
   }
 
+  // fallback : last neighbour  
   p_pos = u;
   is_visited[u] = (u != p_graph->start[p_id]) ? 1 : 0;
+
   return (struct move_t){.c = p_id, .t = MOVE, .m = u};
 }
 

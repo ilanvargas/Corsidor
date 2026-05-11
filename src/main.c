@@ -118,8 +118,8 @@ int main(int argc, char* argv[]) {
   int color = rand() % NUM_PLAYERS;
 
   struct player_t players[NUM_PLAYERS];
-  players[color] = load_player("./foenem.so");
-  players[1 - color] = load_player("./tourist.so");
+  players[color] = load_player("./zscarecrow.so");
+  players[1 - color] = load_player("./zscarecrow1.so");
 
   struct graph_t* graph = graph_init(m, type);
 

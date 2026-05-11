@@ -5,14 +5,17 @@
 #include "test.h"
 
 gsl_spmatrix_uint* matrix2gsl(size_t n, unsigned int mat[n][n]) {
-  gsl_spmatrix_uint* t = gsl_spmatrix_uint_alloc(n, n);
+  gsl_spmatrix_uint* tmp = gsl_spmatrix_uint_alloc(n, n);
 
   for (size_t i = 0; i < n; i++) {
     for (size_t j = 0; j < n; j++) {
-      gsl_spmatrix_uint_set(t, i, j, mat[i][j]);
+      if (mat[i][j] != 0)
+        gsl_spmatrix_uint_set(tmp, i, j, mat[i][j]);
     }
   }
 
+  gsl_spmatrix_uint* t = gsl_spmatrix_uint_crs(tmp); 
+  free(tmp);
   return t;
 }
 

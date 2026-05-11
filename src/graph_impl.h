@@ -3,13 +3,12 @@
 
 #include "graph.h"
 
-#define IS_VERTEX_VALID(graph, v) ((v) < (graph)->t->size1)
-
 #define IS_ADJACENT(graph, u, v) \
   (gsl_spmatrix_uint_get((graph)->t, (u), (v)) != NO_EDGE)
 
-#define IS_WALL(graph, fr, to) \
-  ((gsl_spmatrix_uint_get((graph)->t, (fr), (to)) & WALL_MASK) != 0)
+#define IS_VERTEX_VALID(graph, v) ((v) < (graph)->t->size1)
+
+#define IS_WALL(val) (((val) & WALL_MASK) != NO_EDGE)
 
 /* Initialisation of the game graph
  * PARAM:
@@ -28,8 +27,14 @@ enum dir_t translate_dir(int di, int dj);
  */
 void graph_free(struct graph_t* graph);
 
+/** Gives to a pointer to edge
+ * Usefull to modify it (add wall)
+ */
+unsigned int* get_edge(gsl_spmatrix_uint* csr, vertex_t fr, vertex_t to);
+
 /** Build wall in graph on edges e
  *  WALL_MASK on edges e
+ *  PRECOND: The wall is valid
  */
 void build_wall(struct graph_t* graph, struct edge_t e[2]);
 
