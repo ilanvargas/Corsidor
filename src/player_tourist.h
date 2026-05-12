@@ -6,11 +6,10 @@
 #define MAX_DIST_STRAIGHT 3
 #define MAX_DIST_60 2
 
-#define IS_WALL(graph, fr, to) \
-  ((gsl_spmatrix_uint_get((graph)->t, (fr), (to)) & WALL_MASK) != 0)
+#define IS_WALL(val) (((val) & WALL_MASK) != NO_EDGE)
 
 // diference done by placing a wall needed to place it
-#define WALL_DIFF 4
+#define WALL_DIFF 1
 
 // game players state attributes
 struct players_state_t {

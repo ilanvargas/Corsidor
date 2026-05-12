@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
 
   struct player_t players[NUM_PLAYERS];
   players[color] = load_player("./zscarecrow.so");
-  players[1 - color] = load_player("./zscarecrow1.so");
+  players[1 - color] = load_player("./tourist.so");
 
   struct graph_t* graph = graph_init(m, type);
 
@@ -210,6 +210,8 @@ int main(int argc, char* argv[]) {
 
           p_prev_pos[color_turn] = p_pos[color_turn];
           p_pos[color_turn] = move.m;
+        is_player_visit(graph, p_pos[color_turn], &p_num_visited[color_turn],
+                        p_is_visited[color_turn]);
         }
 
         break;

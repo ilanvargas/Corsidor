@@ -21,7 +21,7 @@ struct move_t play(const struct move_t previous_moves[NUM_PLAYERS]) {
   unsigned int op_id = 1 - players_state->id;
   if (previous_moves[op_id].t == MOVE || previous_moves[op_id].t == JUMP) {
     players_state->op_pos = previous_moves[op_id].m;
-    // update objetive_reached
+    // update objetive_reached for opponent
     for (unsigned int k = 0; k < players_state->graph->num_objectives; k++) {
       if (players_state->graph->objectives[k] == previous_moves[op_id].m &&
           !players_state->is_objective_reached[op_id][k]) {

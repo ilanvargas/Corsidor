@@ -84,11 +84,14 @@ void queue_deep(struct players_state_t* players_state,
                 enum dir_t dir_u,
                 vertex_t* queue,
                 int* tail) {
+  gsl_spmatrix_uint* csr = players_state->graph->t;
+
   vertex_t curr_straight = curr;
   for (int i = 0; i < max_dist; i++) {
-    for (vertex_t v = 0; v < players_state->graph->t->size1; v++) {
-      if (gsl_spmatrix_uint_get(players_state->graph->t, curr_straight, v) ==
-          dir_u) {
+
+    for (int k = csr->p[curr_straight]; k < csr->p[curr_straight + 1]; k++) {
+      vertex_t v = csr->i[k];
+      if (csr->data[k] == dir_u) {
         if (color[v] == 0) {
           dist[v] = dist[curr] + 1;
           parent[v] = curr_straight;
@@ -98,6 +101,7 @@ void queue_deep(struct players_state_t* players_state,
           queue[*tail] = v;
           (*tail)++;
         }
+
         curr_straight = v;
         break;
       }
@@ -129,9 +133,9 @@ void BFS(struct players_state_t* players_state,
          enum dir_t* parent_dir,
          unsigned int* dist,
          int* color) {
-  unsigned int n = players_state->graph->t->size1;
+  gsl_spmatrix_uint* csr = players_state->graph->t;
 
-  vertex_t queue[players_state->graph->t->size1];
+  vertex_t queue[csr->size1];
   queue[0] = source;
   int head = 0;
   int tail = 1;
@@ -143,18 +147,17 @@ void BFS(struct players_state_t* players_state,
   while (head != tail) {
     vertex_t curr = queue[head++];
 
-    for (vertex_t u = 0; u < n; u++) {
-      enum dir_t dir_u =
-          gsl_spmatrix_uint_get(players_state->graph->t, curr, u);
+    for (int k = csr->p[curr]; k < csr->p[curr + 1]; k++) {
+      vertex_t u = csr->i[k];
+      unsigned int dir_u = csr->data[k];
 
-      // for every neighbour of curr
-      if (dir_u != NO_EDGE && !IS_WALL(players_state->graph, curr, u)) {
+      // for every accessible neighbour of curr
+      if (!IS_WALL(dir_u)) {
         // if never visited
         if (color[u] == 0) {
           dist[u] = dist[curr] + 1;
           parent[u] = curr;
-          parent_dir[u] =
-              gsl_spmatrix_uint_get(players_state->graph->t, curr, u);
+          parent_dir[u] = dir_u;
 
           color[u] = 1;
           queue[tail++] = u;
@@ -183,12 +186,13 @@ void init_BFS(struct players_state_t* players_state,
               unsigned int* dist,
               enum dir_t* parent_dir,
               int* color) {
-  for (unsigned int j = 0; j < players_state->graph->t->size1; j++) {
+  unsigned int n = players_state->graph->t->size1;
+  for (unsigned int j = 0; j < n; j++) {
     dist[j] = UINT_MAX;
+    parent_dir[j] = NO_EDGE;  
   }
   dist[source] = 0;
-  parent_dir[source] = NO_EDGE;
-  memset(color, 0, players_state->graph->t->size1 * sizeof(int));
+  memset(color, 0, n * sizeof(int));
 }
 
 /** Retuns next objective
@@ -245,6 +249,10 @@ void path_creation(struct players_state_t* players_state,
     path->paths[i][j] = curr_path[curr_path_len - j - 1];
   }
   path->lens[i] = curr_path_len;
+
+  printf("path %d: ", i);
+  for (size_t j = 0; j < curr_path_len; j++)
+    printf(" %d ", path->paths[i][j]);
 }
 
 void global_glouton(struct players_state_t* players_state,
@@ -298,12 +306,24 @@ void global_glouton(struct players_state_t* players_state,
   path->origin_source = source;
 }
 
+/* Update player objectives */
+void update_objectives(struct players_state_t* players_state, vertex_t v) {
+  for (unsigned int k = 0; k < players_state->graph->num_objectives; k++) {
+    if (players_state->graph->objectives[k] == v &&
+        !players_state->is_objective_reached[players_state->id][k]) {
+      players_state->is_objective_reached[players_state->id][k] = 1;
+      players_state->num_objective_to_reach--;
+      break;
+    }
+  }
+}
+
 struct move_t go_throught_path(struct players_state_t* players_state,
                                struct path_t* path) {
-  unsigned int n = players_state->graph->t->size1;
+  gsl_spmatrix_uint* csr = players_state->graph->t;
   vertex_t fr = players_state->pos;
   vertex_t next = path->paths[path->i][path->j];
-  enum dir_t dir_go = gsl_spmatrix_uint_get(players_state->graph->t, fr, next);
+  enum dir_t dir_go = gsl_spmatrix_uint_get(csr, fr, next);
 
   int dir_diff = dir_difference(players_state->prev_dir, dir_go);
   int max_dist;
@@ -319,8 +339,7 @@ struct move_t go_throught_path(struct players_state_t* players_state,
   vertex_t v = fr;
   for (int i = 0; i < max_dist; i++) {
     next = path->paths[path->i][path->j];
-    enum dir_t next_dir =
-        gsl_spmatrix_uint_get(players_state->graph->t, v, next);
+    enum dir_t next_dir = gsl_spmatrix_uint_get(csr, v, next);
 
     if (next_dir != dir_go)
       break;
@@ -329,27 +348,30 @@ struct move_t go_throught_path(struct players_state_t* players_state,
     if (next == players_state->op_pos) {
       // if we can jump
       if (i == 0) {
-        for (vertex_t u = 0; u < n; u++) {
-          if (gsl_spmatrix_uint_get(players_state->graph->t, next, u) ==
-              dir_go) {
+        for (int k = csr->p[next]; k < csr->p[next + 1]; k++) {
+          if (csr->data[k] == dir_go) {
+            vertex_t u = csr->i[k];
+
             players_state->pos = u;
+            update_objectives(players_state, u);
             global_glouton(players_state, path);
             return (struct move_t){.c = players_state->id, .t = JUMP, .m = u};
           }
         }
         // if not able to go in dir_go
-        for (vertex_t u = 0; u < n; u++) {
-          if (gsl_spmatrix_uint_get(players_state->graph->t, next, u) !=
-              NO_EDGE) {
-            players_state->pos = u;
-            global_glouton(players_state, path);
-            return (struct move_t){.c = players_state->id, .t = JUMP, .m = u};
-          }
+        for (int k = csr->p[next]; k < csr->p[next + 1]; k++) {
+          vertex_t u = csr->i[k];
+
+          players_state->pos = u;
+          update_objectives(players_state, u);
+          global_glouton(players_state, path);
+          return (struct move_t){.c = players_state->id, .t = JUMP, .m = u};
         }
       }
       // just stops in from of player
       else {
         players_state->pos = v;
+        update_objectives(players_state, v);
         global_glouton(players_state, path);
         break;
       }
@@ -364,14 +386,8 @@ struct move_t go_throught_path(struct players_state_t* players_state,
       path->j = 0;
 
       // update objetive_reached
-      for (unsigned int k = 0; k < players_state->graph->num_objectives; k++) {
-        if (players_state->graph->objectives[k] == v &&
-            !players_state->is_objective_reached[players_state->id][k]) {
-          players_state->is_objective_reached[players_state->id][k] = 1;
-          players_state->num_objective_to_reach--;
-          break;
-        }
-      }
+      update_objectives(players_state, v);
+
       break;
     }
   }
@@ -380,22 +396,36 @@ struct move_t go_throught_path(struct players_state_t* players_state,
   return (struct move_t){.c = players_state->id, .t = MOVE, .m = v};
 }
 
+/** Gives to a pointer to edge
+ * Usefull to modify it (add wall)
+ */
+unsigned int* get_edge(gsl_spmatrix_uint* csr, vertex_t fr, vertex_t to) {
+    for (int k = csr->p[fr]; k < csr->p[fr + 1]; k++) {
+        if ((vertex_t)csr->i[k] == to)
+            return &csr->data[k];
+    }
+    return NULL;
+}
+
 void build_wall(struct players_state_t* players_state, struct edge_t e) {
-  gsl_spmatrix_uint_set(
-      players_state->graph->t, e.fr, e.to,
-      gsl_spmatrix_uint_get(players_state->graph->t, e.fr, e.to) | WALL_MASK);
-  gsl_spmatrix_uint_set(
-      players_state->graph->t, e.to, e.fr,
-      gsl_spmatrix_uint_get(players_state->graph->t, e.to, e.fr) | WALL_MASK);
+  // Wall needs to be read on both sides
+  gsl_spmatrix_uint* csr = players_state->graph->t;
+
+  unsigned int* val_fr = get_edge(csr, e.fr, e.to);
+  unsigned int* val_to = get_edge(csr, e.to, e.fr);
+
+  *val_to |= WALL_MASK;
+  *val_fr |= WALL_MASK;
 }
 
 void remove_wall(struct players_state_t* players_state, struct edge_t e) {
-  gsl_spmatrix_uint_set(
-      players_state->graph->t, e.fr, e.to,
-      gsl_spmatrix_uint_get(players_state->graph->t, e.fr, e.to) & ~WALL_MASK);
-  gsl_spmatrix_uint_set(
-      players_state->graph->t, e.to, e.fr,
-      gsl_spmatrix_uint_get(players_state->graph->t, e.to, e.fr) & ~WALL_MASK);
+  gsl_spmatrix_uint* csr = players_state->graph->t;
+
+  unsigned int* val_fr = get_edge(csr, e.fr, e.to);
+  unsigned int* val_to = get_edge(csr, e.to, e.fr);
+
+  *val_to &= ~WALL_MASK;
+  *val_fr &= ~WALL_MASK;
 }
 
 int wall_move(struct players_state_t* players_state,
@@ -404,8 +434,9 @@ int wall_move(struct players_state_t* players_state,
   if (players_state->num_walls <= 0)
     return 0;
 
+  gsl_spmatrix_uint* csr = players_state->graph->t;
   unsigned int op_id = 1 - players_state->id;
-  unsigned int n = players_state->graph->t->size1;
+  unsigned int n = csr->size1;
 
   // dynamic allocation
   unsigned int* dist = malloc(n * sizeof(unsigned int));
@@ -443,22 +474,30 @@ int wall_move(struct players_state_t* players_state,
 
   // find best wall placement
   unsigned int obj_dist_wall = obj_dist;
-  struct edge_t e[2];
+  struct edge_t e[2] = {{.fr = UINT_MAX, .to = UINT_MAX},
+                        {.fr = UINT_MAX, .to = UINT_MAX}};
+;
   for (unsigned int i = 0; i + 1 < op_path_len; i++) {
     struct edge_t e_tmp[] = {{.fr = op_path[i], .to = op_path[i + 1]},
-                             {.fr = op_path[i], .to = op_path[i]}};
-    for (vertex_t v = 0; v < n; v++) {
-      if (gsl_spmatrix_uint_get(players_state->graph->t, op_path[i], v) !=
-              NO_EDGE &&
-          !IS_WALL(players_state->graph, op_path[i], v) &&
-          gsl_spmatrix_uint_get(players_state->graph->t, v, op_path[i + 1]) !=
-              NO_EDGE) {
+                             {.fr = op_path[i], .to = UINT_MAX}};
+
+    // find e[1].to
+    for (int k = csr->p[op_path[i]]; k < csr->p[op_path[i] + 1]; k++) {
+      vertex_t v = csr->i[k];
+      unsigned int val_v = csr->data[k];      
+      if (!IS_WALL(val_v) &&
+          gsl_spmatrix_uint_get(csr, v, op_path[i + 1]) != NO_EDGE) {
         e_tmp[1].to = v;
+        break;
       }
     }
-
+    if (e_tmp[1].to == UINT_MAX)  
+      continue;
+    printf("Ya1\n");
+    printf("%d %d %d %d\n", e_tmp[0].fr, e_tmp[0].to, e_tmp[1].fr, e_tmp[1].to);
     build_wall(players_state, e_tmp[0]);
     build_wall(players_state, e_tmp[1]);
+    printf("Ya2\n");
 
     init_BFS(players_state, source, dist, parent_dir, color);
     BFS(players_state, source, parent, parent_dir, dist, color);
@@ -469,6 +508,7 @@ int wall_move(struct players_state_t* players_state,
       obj_dist_wall = dist[obj];
     }
 
+    printf("Ya\n");
     // reset wall
     remove_wall(players_state, e_tmp[0]);
     remove_wall(players_state, e_tmp[1]);
@@ -478,6 +518,12 @@ int wall_move(struct players_state_t* players_state,
   free(parent);
   free(parent_dir);
   free(color);
+
+  printf("lkjfdsq %d %d\n", obj_dist_wall, obj_dist);
+  printf("waterloo %d (%d %d %d %d)\n", players_state->prev_move.t, players_state->prev_move.e[0].fr, players_state->prev_move.e[0].to, players_state->prev_move.e[1].fr, players_state->prev_move.e[1].to);
+  // Verify acceptable edge
+  if (e[1].to == UINT_MAX)
+    return 0;
 
   // Do not place wall if not worth it
   if (abs((int)obj_dist_wall - (int)obj_dist) < WALL_DIFF)
