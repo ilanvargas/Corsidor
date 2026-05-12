@@ -9,7 +9,7 @@
 #define IS_WALL(val) (((val) & WALL_MASK) != NO_EDGE)
 
 // diference done by placing a wall needed to place it
-#define WALL_DIFF 1
+#define WALL_DIFF 4
 
 // game players state attributes
 struct players_state_t {

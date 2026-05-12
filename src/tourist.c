@@ -249,10 +249,6 @@ void path_creation(struct players_state_t* players_state,
     path->paths[i][j] = curr_path[curr_path_len - j - 1];
   }
   path->lens[i] = curr_path_len;
-
-  printf("path %d: ", i);
-  for (size_t j = 0; j < curr_path_len; j++)
-    printf(" %d ", path->paths[i][j]);
 }
 
 void global_glouton(struct players_state_t* players_state,
@@ -493,11 +489,8 @@ int wall_move(struct players_state_t* players_state,
     }
     if (e_tmp[1].to == UINT_MAX)  
       continue;
-    printf("Ya1\n");
-    printf("%d %d %d %d\n", e_tmp[0].fr, e_tmp[0].to, e_tmp[1].fr, e_tmp[1].to);
     build_wall(players_state, e_tmp[0]);
     build_wall(players_state, e_tmp[1]);
-    printf("Ya2\n");
 
     init_BFS(players_state, source, dist, parent_dir, color);
     BFS(players_state, source, parent, parent_dir, dist, color);
@@ -508,7 +501,6 @@ int wall_move(struct players_state_t* players_state,
       obj_dist_wall = dist[obj];
     }
 
-    printf("Ya\n");
     // reset wall
     remove_wall(players_state, e_tmp[0]);
     remove_wall(players_state, e_tmp[1]);
@@ -519,8 +511,6 @@ int wall_move(struct players_state_t* players_state,
   free(parent_dir);
   free(color);
 
-  printf("lkjfdsq %d %d\n", obj_dist_wall, obj_dist);
-  printf("waterloo %d (%d %d %d %d)\n", players_state->prev_move.t, players_state->prev_move.e[0].fr, players_state->prev_move.e[0].to, players_state->prev_move.e[1].fr, players_state->prev_move.e[1].to);
   // Verify acceptable edge
   if (e[1].to == UINT_MAX)
     return 0;

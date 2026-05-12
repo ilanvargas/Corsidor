@@ -119,6 +119,7 @@ int main(int argc, char* argv[]) {
 
   struct player_t players[NUM_PLAYERS];
   players[color] = load_player("./zscarecrow.so");
+  //players[color] = load_player("./zzztourist.so");
   players[1 - color] = load_player("./tourist.so");
 
   struct graph_t* graph = graph_init(m, type);
