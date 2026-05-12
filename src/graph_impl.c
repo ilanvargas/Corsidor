@@ -102,7 +102,7 @@ struct graph_t* graph_init(size_t m, enum graph_type_t type) {
   }
 
   graph->t = gsl_spmatrix_uint_crs(t);
-  free(t);
+  gsl_spmatrix_uint_free(t);
   return graph;
 }
 
