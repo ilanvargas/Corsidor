@@ -1,0 +1,31 @@
+\babel@toc {nil}{}\relax 
+\contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
+\contentsline {section}{\numberline {2}Analyse du problème et modélisation}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Architecture logicielle}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Décomposition en sous-problèmes}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Représentation du graphe et encodage des murs}{3}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Règles de déplacement et coups spéciaux}{4}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Structures de données et graphes de jeu}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}La structure \texttt {graph\_t}}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Les plateaux de jeu}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Encodage des murs par masque binaire}{4}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Chargement dynamique des clients}{4}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Boucle de jeu et gestion du Waterloo}{5}{subsection.3.5}%
+\contentsline {subsection}{\numberline {3.6}Vérification de la validité des coups}{5}{subsection.3.6}%
+\contentsline {section}{\numberline {4}Les clients et leurs stratégies}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Client de référence}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Client \textit {Foenem} : stratégie mixte offensive/défensive}{5}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Description générale}{5}{subsubsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.2}Algorithme de Dijkstra et prise en compte du mouvement précédent}{5}{subsubsection.4.2.2}%
+\contentsline {subsubsection}{\numberline {4.2.3}Placement de murs}{6}{subsubsection.4.2.3}%
+\contentsline {subsubsection}{\numberline {4.2.4}Avantages}{6}{subsubsection.4.2.4}%
+\contentsline {subsubsection}{\numberline {4.2.5}Limites et inconvénients}{6}{subsubsection.4.2.5}%
+\contentsline {subsection}{\numberline {4.3}Partage de code entre clients}{6}{subsection.4.3}%
+\contentsline {section}{\numberline {5}Tests et validation}{6}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Stratégie de test}{6}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Analyse d'un bug significatif}{6}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Couverture de code}{6}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Résultats expérimentaux}{6}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Protocole expérimental}{6}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Comparaison des stratégies}{7}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Conclusion}{7}{section.7}%
