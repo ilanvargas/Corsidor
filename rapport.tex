@@ -1,0 +1,958 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+
+\usepackage{graphicx}
+\usepackage{xcolor}
+\definecolor{codeblue}{RGB}{0,0,180}
+\definecolor{codegray}{RGB}{128,128,128}
+\definecolor{codered}{RGB}{180,0,0}
+
+
+\usepackage{algorithm}
+\usepackage{listings}
+\usepackage{algcompatible}
+\usepackage{algpseudocode}
+\lstset{
+  language=C,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codeblue}\bfseries,
+  commentstyle=\color{codegray}\itshape,
+  stringstyle=\color{codered},
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  numbersep=8pt,
+  frame=single,
+  breaklines=true,
+  captionpos=b,
+  tabsize=2,
+  showstringspaces=false,
+  literate=
+    {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {ë}{{\"e}}1
+    {à}{{\`a}}1 {â}{{\^a}}1 {ù}{{\`u}}1 {û}{{\^u}}1
+    {î}{{\^i}}1 {ï}{{\"i}}1 {ô}{{\^o}}1 {ç}{{\c{c}}}1
+}
+
+% ----- Maths -----
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ----- Hyperliens -----
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+% ----- Divers -----
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+
+% ============================================================
+\begin{document}
+
+% ----- Page de titre -----
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+
+  {\Large\bfseries ENSEIRB-MATMECA - Projet de programmation imperative S6\par}
+  \vspace{1cm}
+  \rule{\linewidth}{0.5pt}\\[0.4cm]
+  {\Huge\bfseries Coursidor\par}
+  {\large Variante canadienne de Quoridor\par}
+  \rule{\linewidth}{0.5pt}\\[1cm]
+
+  \vspace{1cm}
+  {\large
+    Mohsine HSSASSA \\ % <-- remplacer
+    Ilan VARGAS \\
+    Youssef DASSOULI \\
+  }
+
+  \vspace{1.5cm}
+  {\large Encadrant : MONCE Gustave\par}
+
+  \vfill
+  {\large Année universitaire 2025--2026\par}
+\end{titlepage}
+
+% ----- Table des matières -----
+\tableofcontents
+\newpage
+
+% ============================================================
+\section*{Introduction}
+\label{sec:intro}
+
+Ce rapport présente le travail réalisé dans le cadre du premier projet de
+programmation du deuxième semestre de la première année à l'ENSEIRB-MATMECA. Le projet
+consiste à implémenter une version jouable du jeu \textbf{Coursidor},
+une variante du jeu de société Quoridor créé par Mirko Marchesi en
+1997~\cite{quoridor_wiki}.
+
+Coursidor modifie la règle d'objectif originale~: au lieu de traverser
+le plateau, chaque joueur doit parcourir un ensemble de \emph{bases}
+(objectifs) dans un ordre quelconque, à la manière du baseball, puis
+revenir à sa position de départ. La \textbf{variante canadienne}
+introduit une contrainte supplémentaire~: chaque joueur joue en
+information incomplète, sans voir les murs posés par son adversaire.
+Un joueur ne découvre un mur qu'en essayant de se déplacer à travers
+lui, ce qui donne lieu à un coup spécial appelé \emph{Waterloo}.
+
+
+\medskip
+Le projet se décompose en deux grandes parties~:
+\begin{itemize}
+  \item Un \textbf{serveur} de jeu qui orchestre les parties,
+        vérifie la validité des coups et gère les règles~;
+  \item Des \textbf{clients} autonomes, compilés en bibliothèques
+        partagées (\texttt{.so}), qui décident de leur stratégie
+        sans intervention humaine.
+\end{itemize}
+
+\medskip
+La suite du rapport s'organise comme suit~:
+la section~\ref{sec:analyse} présente l'analyse du problème et les
+choix de modélisation~;
+la section~\ref{sec:graphe} décrit la validation des movements et le structure de donnée pour les
+graphes de jeu~;
+la section~\ref{sec:serveur} détaille l'implémentation du serveur~;
+la section~\ref{sec:client} présente les clients et leurs stratégies~;
+la section~\ref{sec:resultats} expose la démarche de test et l'analyse des résultats obtenus~;
+enfin, la section~\ref{sec:conclusion} conclut et propose des pistes
+d'amélioration.
+
+% ============================================================
+\section{Analyse du problème et modélisation}
+\label{sec:analyse}
+
+\subsection{Architecture logicielle}
+
+Le projet est organisé autour d'une architecture modulaire permettant la séparation claire entre le serveur et les clients. Le serveur, implémenté dans \texttt{main.c}, gère la logique du jeu, l'organisation des tours et la validation des coups. Les clients, compilés en bibliothèques dynamiques (\texttt{.so}), contiennent les stratégies de jeu et sont chargés à l'exécution via \texttt{dlopen}.
+
+Cette architecture permet l'interopérabilité entre équipes : chaque groupe peut développer son propre client sans modifier le serveur. Le serveur masque les informations de murs adverses, implémentant ainsi la variante canadienne.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{architecture_corsidor.png}
+    \caption{Diagramme de dépendances entre les modules du projet}
+    \label{fig:architecture}
+\end{figure}
+
+\subsection{Décomposition en sous-problèmes}
+
+Le problème a été décomposé en plusieurs sous-problèmes :
+\begin{itemize}
+  \item \textbf{Modélisation du plateau de jeu} : Comment representer le plateau de jeu
+  \item \textbf{Règles de mouvement} : validation des déplacements (MOVE, JUMP) avec prise en compte des mouvements accélérés et du coup Waterloo.
+  \item \textbf{Boucle de jeu} : comment orchestrer une partie.
+  \item \textbf{Stratégies de jeu des clients} : implémentation d'algorithmes de jeu automatique.
+\end{itemize}
+
+
+
+% ============================================================
+\section{Gestion du plateau et des déplacements}
+\label{sec:graphe}
+Le plateau de jeu est modélisé par un graphe où les sommets représentent les cases et les arêtes les chemins possibles entre deux arrets.
+
+\subsection{La structure \texttt{graph\_t}}
+
+La structure \texttt{graph\_t} encapsule toutes les informations du plateau :
+\begin{itemize}
+  \item \texttt{type} : définie la forme du plateau.
+  \item \texttt{num\_vertices} : le nombre de sommets \item \texttt{num\_edges} : le  nombre des arretes
+  \item \texttt{t} : matrice creuse GSL
+  \item \texttt{start[2]} : positions initiales des joueurs
+  \item \texttt{objectives} : tableau des objectifs à atteindre
+\end{itemize}
+
+Nous avons implémentés deux types de plateaux :
+\begin{itemize}
+  \item \textbf{Parallélogramme} : grille carrée avec connexions hexagonales
+  \item \textbf{Triangulaire} : plateau triangulaire avec contraintes géométriques
+\end{itemize}
+
+Pour représenter les matrices d'adjacence des graphes de jeu sous forme de matrices creuses nous avons utilisé la bibliothèque GSL (GNU Scientific Library). La construction initiale de la matrice s'effectue au format COO (Coordinate Storage), en y insérant les arêtes une à une via la fonction gsl\_spmatrix\_uint\_set. Cependant, pour obtenir une itération algorithmiquement efficace sur les voisins d'un sommet, le projet impose de convertir cette matrice au format CSR (Compressed Sparse Row) à l'aide de gsl\_spmatrix\_uint\_compress. Contrairement au format COO, où la recherche des voisins d'une ligne exigerait un parcours complet de la matrice en O(n²), le format CSR, grâce à son tableau interne de pointeurs csr->p, permet d'accéder directement et séquentiellement aux seuls éléments non nuls de chaque ligne. L'itération s'effectue ainsi en O(deg(v)), un gain décisif pour la performance sur les graphes de grande taille où le degré des sommets reste faible. 
+
+
+\subsection{Mouvement invalide? Waterloo !?}
+
+Les coups sont de quatre types : MOVE : déplacement simple, JUMP : saut par-dessus l'adversaire, WALL : placement de mur et WATERLOO : coup révélant un mur caché lors d'un déplacement.
+
+\subsubsection*{Coups invalides :}
+
+Un coup de type \texttt{MOVE} est \textbf{invalide} si le joueur ne respecte pas 
+les contraintes de déplacement suivantes.
+
+\begin{itemize}
+    \item \textbf{Même direction que le dernier déplacement :} le joueur peut 
+    avancer jusqu'à une distance de \textbf{3} cases dans cette direction.
+    
+    \item \textbf{Direction adjacente (à 60°) du dernier déplacement :} le joueur 
+    peut avancer jusqu'à une distance de \textbf{2} cases dans cette direction.
+    
+    \item \textbf{Toute autre direction :} le joueur ne peut se déplacer que sur 
+    un sommet adjacent.
+\end{itemize}
+
+Dans tous les cas, les conditions suivantes doivent être simultanément respectées :
+
+\begin{itemize}
+    \item La case cible doit être \textbf{différente} de la case courante du joueur.
+    \item La case cible (ainsi que toutes les cases intermédiaires en cas de 
+    déplacement long) doit correspondre à une \textbf{arête valide} du graphe.
+    \item La case cible (ainsi que toutes les cases intermédiaires en cas de 
+    déplacement long) \textbf{ne doit pas être occupée} par l'adversaire.
+\end{itemize}
+
+Tout coup ne respectant pas l'une de ces règles est immédiatement classé 
+\texttt{ILLEGAL} et entraîne la \textbf{défaite immédiate} du joueur fautif.
+
+\subsubsection*{Coup Waterloo :} 
+
+Un coup \texttt{WATERLOO} apparait lorsqu'un joueur propose un déplacement ou 
+un placement de mur valide en apparence, mais bloqué par un mur qu'il ne 
+connaît pas:
+
+\begin{itemize}
+    \item \textbf{Déplacement \texttt{MOVE} bloqué par un mur inconnu :} 
+    le joueur est arrêté juste avant le mur.
+
+    \item \textbf{Saut \texttt{JUMP} bloqué par un mur inconnu :} 
+    le joueur reste sur place.
+
+    \item \textbf{Placement de mur \texttt{WALL} sur un mur existant :} 
+    le nouveau mur n'est pas posé.
+
+    \item \textbf{Placement de mur \texttt{WALL} bloquant un joueur :} 
+    le mur est refusé car il empêcherait un joueur d'atteindre ses objectifs. 
+\end{itemize}
+
+Dans les cas \texttt{MOVE} et \texttt{JUMP}, le dernier déplacement unitaire 
+n'est mis à jour \textbf{que si le joueur s'est effectivement déplacé}. 
+En particulier, un \texttt{JUMP} bloqué ne modifie pas la direction mémorisée.
+
+Ce sont les fonctions du module \texttt{move\_check.h} gèrent simultanément les coups invalides (via \texttt{move\_is\_valid} de \texttt{move\_valid.c}) et les coups Waterloo (via \texttt{convert\_waterloo} de \texttt{waterloo.c}).
+
+
+
+% ============================================================
+\section{Serveur de jeu}
+\label{sec:serveur}
+\subsection{Vue d'ensemble}
+
+Le serveur constitue le \textbf{chef d'orchestre} de la partie : il initialise
+le plateau, charge dynamiquement les clients, arbitre chaque tour en vérifiant
+la légalité des coups, et notifie les joueurs de la fin de la partie. Il est
+entièrement \textbf{indépendant des stratégies} des clients, avec lesquels il
+ne communique qu'à travers l'interface définie dans \texttt{player.h}.
+
+\begin{figure}[h]
+\centering
+% Figure : vue d'ensemble du serveur comme arbitre central
+% Boîte centrale "Serveur" reliée par des flèches bidirectionnelles à :
+%   - "Client BLACK (.so)" à gauche  [initialize / play / finalize]
+%   - "Client WHITE (.so)" à droite  [initialize / play / finalize]
+%   - "Graphe de jeu" en bas         [graph_init / graph_free]
+% Montrer que le serveur possède le graphe réel (avec tous les murs)
+% et que chaque client reçoit une copie indépendante à la construction.
+\caption{Architecture générale du serveur de jeu}
+\end{figure}
+
+\subsection{Structure de données : \texttt{struct player\_t}}
+
+Le serveur représente chaque client par une structure \texttt{struct player\_t}
+qui regroupe le handle de la bibliothèque dynamique et les pointeurs vers les
+quatre fonctions de l'interface \texttt{player.h} :
+
+
+\begin{figure}[h]
+\centering
+% Figure : diagramme de la struct player_t
+% Boîte avec 5 champs :
+%   handle (void*)  |  get_player_name (fptr)  |  initialize (fptr)
+%   play (fptr)     |  finalize (fptr)
+% Flèche depuis handle vers "zscarecrow.so / tourist.so" (bibliothèques)
+% Flèches depuis les fptr vers les fonctions correspondantes dans le .so
+\caption{Structure \texttt{player\_t} et ses liens vers la bibliothèque dynamique}
+\end{figure}
+
+\subsection{Chargement dynamique des clients : \texttt{load\_player}}
+
+Le chargement d'un client suit le protocole \texttt{dlopen}/\texttt{dlsym}
+défini dans \texttt{dlfcn.h}. La fonction \texttt{load\_player} réalise les
+étapes suivantes :
+
+\begin{enumerate}
+    \item \textbf{Ouverture de la bibliothèque} avec \texttt{dlopen(path, RTLD\_LAZY)} :
+    le flag \texttt{RTLD\_LAZY} diffère la résolution des symboles à leur premier
+    appel effectif, ce qui accélère le chargement.
+    \item \textbf{Résolution des symboles} avec \texttt{dlsym} pour chacune des
+    quatre fonctions de l'interface. En cas d'échec (symbole absent), \texttt{dlsym}
+    retourne \texttt{NULL}.
+    \item \textbf{Retour de la structure} \texttt{player\_t} complète, prête à
+    l'emploi par le serveur.
+\end{enumerate}
+
+En fin de partie, le serveur libère chaque bibliothèque avec \texttt{dlclose},
+permettant au système de décharger le code chargé dynamiquement.
+
+\begin{algorithm}
+\caption{Chargement d'un client dynamique}
+\begin{algorithmic}[1]
+\Function{load\_player}{$path$}
+    \State $handle \gets$ \Call{dlopen}{$path$, \texttt{RTLD\_LAZY}}
+    \If{$handle = \texttt{NULL}$} \textbf{exit}(FAILURE) \EndIf
+    \State $p.handle \gets handle$
+    \State $p.get\_player\_name \gets$ \Call{dlsym}{$handle$, \texttt{"get\_player\_name"}}
+    \State $p.initialize \gets$ \Call{dlsym}{$handle$, \texttt{"initialize"}}
+    \State $p.play \gets$ \Call{dlsym}{$handle$, \texttt{"play"}}
+    \State $p.finalize \gets$ \Call{dlsym}{$handle$, \texttt{"finalize"}}
+    \Return $p$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Initialisation de la partie}
+
+Avant le premier tour, le serveur procède aux initialisations suivantes :
+
+\begin{itemize}
+    \item \textbf{Tirage aléatoire de la couleur de départ} : \texttt{srand(time(NULL))};
+    Le joueur \texttt{BLACK}
+    n'est donc pas toujours le même client.
+    \item \textbf{Construction du graphe de référence} : \texttt{graph\_init(m, type)}
+    crée le graphe central du serveur, qui contient l'état \textit{réel} du plateau.
+    \item \textbf{Construction des graphes clients} : chaque client reçoit sa
+    \textit{propre copie} du graphe via un second appel à \texttt{graph\_init}.
+    Cette copie est transmise à \texttt{initialize} et devient la responsabilité
+    du client.
+    \item \textbf{Initialisation des structures de suivi} : positions courantes
+    \texttt{p\_pos}, positions précédentes \texttt{p\_prev\_pos}, compteurs
+    d'objectifs \texttt{p\_num\_visited}, et tableaux booléens \texttt{p\_is\_visited}
+    marquant les objectifs déjà atteints par chaque joueur.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+% Figure : séquence d'initialisation (diagramme de séquence simplifié)
+% Vertical : Serveur | Client BLACK | Client WHITE
+% Flèches :
+%   Serveur -> Serveur : graph_init() x3 (1 pour le serveur, 1 par client)
+%   Serveur -> Client BLACK : initialize(0, graph_copy_0)
+%   Serveur -> Client WHITE : initialize(1, graph_copy_1)
+% Annotations : "graphe réel" sur la copie serveur, "vue partielle" sur les copies clients
+\caption{Séquence d'initialisation de la partie}
+\end{figure}
+
+\subsection{Boucle de jeu principale}
+
+La boucle de jeu alterne les tours des deux joueurs jusqu'à ce que la condition
+de fin soit atteinte. À chaque tour, le serveur effectue les opérations suivantes :
+
+\begin{enumerate}
+    \item \textbf{Vérification de fin de partie} via \texttt{is\_end\_game} :
+    contrôle du nombre maximal de tours $M$, et vérification que l'un des joueurs
+    a visité tous les objectifs et est revenu à sa case de départ.
+    \item \textbf{Appel à \texttt{play}} du joueur courant, en lui transmettant
+    les deux derniers coups réels \texttt{prev\_moves}.
+    \item \textbf{Validation du coup} par \texttt{move\_is\_valid} : tout coup
+    invalide entraîne la défaite immédiate du joueur fautif.
+    \item \textbf{Application du coup} selon son type, avec conversion
+    \texttt{WATERLOO} si nécessaire.
+    \item \textbf{Mise à jour de l'état} : positions, coups précédents, objectifs
+    atteints.
+\end{enumerate}
+
+\begin{algorithm}
+\caption{Main game loop}
+\begin{algorithmic}[1]
+\While{\textbf{not} \Call{is\_end\_game}{$graph, turn, M, p\_num\_visited, p\_pos$}}
+    \State $c \gets turn \bmod 2$
+    \State $move \gets players[c].$\Call{play}{$p\_prev\_moves$}
+    \If{\textbf{not} \Call{move\_is\_valid}{$graph, move, p\_pos, p\_prev\_pos, p\_walls$}}
+        \State \textbf{print} "invalid move -- opponent wins"
+        \State \textbf{break}
+    \EndIf
+    \If{$move.t = \texttt{MOVE}$}
+        \State \Call{convert\_waterloo}{$graph, move, p\_pos$} \Comment{if unknown wall}
+        \State $p\_prev\_pos[c] \gets p\_pos[c]$
+        \State $p\_pos[c] \gets move.m$
+        \State \Call{is\_player\_visit}{$graph, p\_pos[c]$}
+    \ElsIf{$move.t = \texttt{JUMP}$}
+        \If{\textbf{not} \Call{convert\_waterloo}{$graph, move, p\_pos$}}
+            \State $p\_prev\_pos[c] \gets p\_pos[c]$
+            \State $p\_pos[c] \gets move.m$
+            \State \Call{is\_player\_visit}{$graph, p\_pos[c]$}
+        \EndIf
+    \ElsIf{$move.t = \texttt{WALL}$}
+        \If{\textbf{not} \Call{convert\_waterloo}{$graph, move, p\_pos$}}
+            \State \Call{build\_wall}{$graph, move.e$}
+        \EndIf
+    \EndIf
+    \State $p\_prev\_moves[c] \gets move$
+    \State $turn \gets turn + 1$
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Détection et traitement des coups Waterloo}
+
+La fonction \texttt{convert\_waterloo} est le mécanisme central de la variante
+canadienne. Elle est appelée sur le graphe \textit{réel} du serveur, qui contient
+les murs adverses inconnus du joueur. Son rôle est de détecter si le coup proposé
+traverse un mur invisible, et si c'est le cas, de modifier le coup \textit{en place}
+pour refléter ce qui s'est réellement passé.
+
+\paragraph{Asymétrie d'information.} Le graphe du serveur et le graphe du client
+divergent dès qu'un mur adverse est posé : le serveur voit tous les murs, le client
+ne voit que les siens et ceux révélés par des WATERLOO passés. C'est cette
+asymétrie qui est au cœur de la variante canadienne.
+
+\begin{figure}[h]
+\centering
+% Figure : asymétrie d'information entre serveur et client
+% Deux graphes côte à côte, même topologie de base
+%   Graphe serveur : arête (u,v) marquée WALL_MASK (mur adversaire visible)
+%   Graphe client  : arête (u,v) non murée (mur inconnu)
+% Le joueur demande MOVE vers v → le serveur détecte le mur
+%   → convert_waterloo transforme en WATERLOO, retourne la position avant le mur
+% Flèche entre les deux graphes annotée "WATERLOO révèle l'arête (u,v)"
+\caption{Asymétrie d'information et mécanisme WATERLOO}
+\end{figure}
+
+\subsection{Suivi des objectifs : \texttt{is\_player\_visit}}
+
+Après chaque déplacement effectif, le serveur vérifie si la nouvelle position
+du joueur correspond à un objectif non encore visité. La fonction
+\texttt{is\_player\_visit} parcourt le tableau \texttt{graph->objectives} et,
+en cas de correspondance, incrémente le compteur \texttt{p\_num\_visited} et
+marque l'objectif comme atteint dans le tableau booléen \texttt{p\_is\_visited}.
+
+La condition de victoire est vérifiée à chaque début de tour par
+\texttt{is\_end\_game} : un joueur gagne s'il a visité tous les objectifs
+(\texttt{p\_num\_visited[i] >= graph->num\_objectives}) \textbf{et} est revenu
+à sa case de départ (\texttt{p\_pos[i] == graph->start[i]}).
+
+\subsection{Options de la ligne de commande}
+
+Le serveur est configurable via \texttt{getopt} avec les options suivantes :
+
+\begin{itemize}
+    \item \texttt{-m M} : taille du graphe (largeur de la maille, défaut~: 5).
+    \item \texttt{-M N} : nombre maximal de tours avant match nul (désactivé par
+    défaut, \texttt{M = -1}).
+    \item \texttt{-t T} : type du graphe (\texttt{P} pour parallélogramme,
+    \texttt{T} pour triangulaire, \texttt{H} pour troué, etc.).
+    \item \texttt{-g} : génère un fichier \texttt{game.dot} représentant le plateau
+    de jeu au format Graphviz, utile pour le débogage visuel.
+\end{itemize}
+
+
+
+\section{Clients}
+\label{sec:client}
+
+\subsection{La stratégie Scarecrow}
+
+\subsubsection{Vue d'ensemble}
+
+La stratégie \textbf{Scarecrow} est un client minimaliste dont le comportement
+repose sur un principe simple : \textbf{parcourir les sommets adjacents dans
+l'ordre de la matrice creuse CSR}, en évitant de revisiter un sommet déjà
+visité. Aucun calcul de chemin, aucune évaluation de murs — Scarecrow avance
+toujours vers le premier voisin non encore visité disponible dans sa liste
+d'adjacence. Cette stratégie sert de \textbf{client de référence naïf},
+utile pour tester le serveur et calibrer des stratégies plus élaborées.
+
+
+\subsubsection{Fonctionnement du tour de jeu}
+
+À chaque appel à \texttt{play}, Scarecrow effectue les trois étapes suivantes :
+
+\begin{enumerate}
+    \item \textbf{Mise à jour de l'état} : si le coup adverse est un
+    \texttt{MOVE} ou un \texttt{JUMP}, la position adverse \texttt{op\_pos}
+    est mise à jour. Si notre propre coup précédent était un \texttt{WATERLOO},
+    la position \texttt{p\_pos} est corrigée avec la valeur retournée par le
+    serveur.
+
+    \item \textbf{Sélection du prochain sommet} : Scarecrow itère sur les
+    voisins de \texttt{p\_pos} dans la représentation CSR du graphe — c'est-à-dire
+    les indices \texttt{csr->i[k]} pour $k \in [\texttt{csr->p[p\_pos]},\,
+    \texttt{csr->p[p\_pos+1]}[$. Pour chaque voisin $v$, il retient
+    le premier qui satisfait simultanément :
+    \begin{itemize}
+        \item $v \neq \texttt{op\_pos}$ : la case cible n'est pas occupée,
+        \item $\texttt{is\_visited}[v] = 0$ : le sommet n'a pas encore été visité.
+    \end{itemize}
+    Dès qu'un tel $v$ est trouvé, il est marqué visité et retourné immédiatement.
+
+    \item \textbf{Repli sur le dernier voisin} : si tous les voisins ont
+    déjà été visités, Scarecrow se déplace vers le dernier voisin valide
+    parcouru dans la boucle (différent de \texttt{op\_pos}), qu'il soit
+    visité ou non. Ce mécanisme évite un coup \texttt{NO\_TYPE} qui
+    entraînerait une défaite immédiate.
+\end{enumerate}
+
+
+\subsubsection{Limites de la stratégie}
+
+Scarecrow présente plusieurs faiblesses structurelles qui en font un client
+délibérément faible, adapté au rôle de cobaye :
+
+\begin{itemize}
+    \item \textbf{Absence de chemin} : le joueur ne calcule jamais de
+    chemin vers un objectif. L'ordre de visite des sommets est entièrement
+    dicté par l'ordre des arêtes dans la matrice CSR, qui dépend de la
+    construction du graphe et non de la topologie du jeu.
+    \item \textbf{Blocage possible} : si tous les voisins sont visités, le joueur tourne en rond sans jamais atteindre ses
+    objectifs.
+    \item \textbf{Ignorance totale des murs} : Scarecrow ne tient pas compte
+    du masque \texttt{WALL\_MASK} dans la matrice CSR. Il peut donc tenter
+    de traverser un mur, ce qui déclenchera systématiquement un \texttt{WATERLOO}
+    dont il ne tire aucun enseignement stratégique.
+    \item \textbf{Pas de placement de murs} : Scarecrow ne joue jamais de
+    coup \texttt{WALL}, ce qui laisse à l'adversaire une liberté de déplacement
+    totale.
+\end{itemize}
+
+\noindent Ces limites font de Scarecrow un adversaire facile à battre pour
+toute stratégie dotée d'un algorithme de recherche de chemin, comme Foenem.
+\subsection{Stratégie Foenem}
+
+\subsubsection{Vue d'ensemble}
+
+\textbf{Foenem} est un client automatique dont l'objectif est de 
+combiner efficacement deux comportements : la \textbf{progression vers les objectifs} 
+par le chemin le plus court, et le \textbf{blocage de l'adversaire} par placement 
+stratégique de murs. À chaque tour, le joueur évalue si poser un mur est plus 
+avantageux que d'avancer.
+
+\begin{figure}[h]
+\centering
+% Figure : diagramme de décision général du tour de jeu
+% Boîte "Début du tour" -> losange "Mur disponible ET gain >= 2 ?" 
+%   -> OUI -> "Poser le meilleur mur"
+%   -> NON -> losange "Adversaire à distance <= 2 de son objectif ?"
+%     -> OUI -> "Poser un mur défensif"
+%     -> NON -> "Se déplacer vers le prochain objectif"
+\caption{Diagramme de décision d'un tour de jeu -- stratégie Foenem}
+\end{figure}
+
+\subsubsection{Représentation de l'état du jeu}
+
+Le joueur Foenem maintient en mémoire un état complet de la partie à travers 
+les variables suivantes :
+
+\begin{itemize}
+    \item \texttt{pos[NUM\_PLAYERS]} : la position courante de chaque joueur.
+    \item \texttt{prev\_pos[NUM\_PLAYERS]} : la position précédente de chaque joueur, 
+    nécessaire pour calculer les déplacements accélérés autorisés.
+    \item \texttt{objective\_reached[NUM\_PLAYERS]} : un tableau de booléens indiquant 
+    quels objectifs ont déjà été atteints par chaque joueur.
+    \item \texttt{objective\_left[NUM\_PLAYERS]} : le nombre d'objectifs restants 
+    pour chaque joueur.
+    \item \texttt{p\_walls\_left} : le nombre de murs encore disponibles.
+    \item \texttt{p\_graph} : une copie indépendante du graphe de jeu, enrichi au fil de la partie par 
+    les murs découverts via les coups \texttt{WATERLOO}.
+\end{itemize}
+
+\noindent La particularité de la variante canadienne est que \texttt{p\_graph} 
+est une \textbf{vue partielle} du plateau réel : les murs adverses y sont 
+absents jusqu'à ce qu'un \texttt{WATERLOO} les révèle.
+
+
+
+\begin{figure}[h]
+\centering
+% Figure : schéma de mise à jour du graphe local après un WATERLOO
+% Avant : arête (u,v) présente dans p_graph (direction NE par exemple)
+% Après : arête (u,v) marquée WALL_NE = NE | WALL_MASK dans p_graph
+% Montrer les valeurs binaires : NE=00000010, WALL_MASK=10000000, WALL_NE=10000010
+\caption{Mise à jour du graphe local lors d'un coup \texttt{WATERLOO}}
+\end{figure}
+
+\subsubsection{Calcul du prochain objectif}
+
+Pour déterminer sa cible, Foenem applique la logique suivante :
+
+\begin{itemize}
+    \item Si tous les objectifs ont été atteints (\texttt{objective\_left == 0}), 
+    la cible devient la \textbf{case de départ} du joueur.
+    \item Sinon, Foenem calcule via Dijkstra les distances depuis sa position 
+    courante vers tous les objectifs non encore atteints, et sélectionne 
+    \textbf{l'objectif le plus proche}.
+\end{itemize}
+
+\begin{algorithm}
+\caption{Selection of the next objective}
+\begin{algorithmic}[1]
+\Function{get\_next\_objective}{$graph, pos, prev\_pos, op\_pos, player$}
+    \If{$objective\_left[player] = 0$}
+        \State \Return $graph.start[player]$
+    \EndIf
+    \State $dist \gets$ \Call{Dijkstra}{$graph, pos, prev\_pos, op\_pos$}
+    \State $best\_dist \gets +\infty$, $best\_obj \gets \bot$
+    \ForAll{objective $o_i$ not yet reached}
+        \If{$dist[o_i] < best\_dist$}
+            \State $best\_dist \gets dist[o_i]$
+            \State $best\_obj \gets o_i$
+        \EndIf
+    \EndFor
+    \State \Return $best\_obj$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Algorithme de Dijkstra adapté}
+
+Le cœur de la stratégie repose sur une version modifiée de l'algorithme de 
+Dijkstra, prenant en compte les \textbf{règles d'accélération} propres à Coursidor. 
+Dans le jeu standard, un graphe à arêtes de poids 1 se parcourt en BFS. Ici, 
+la distance entre deux sommets dépend non seulement de leur adjacence, mais 
+aussi de \textbf{la direction du déplacement précédent}, ce qui justifie le recours à Dijkstra avec un état étendu.
+
+\paragraph{État étendu.} Chaque sommet $v$ est associé dans l'algorithme à 
+son prédécesseur $prev[v]$, qui encode implicitement la direction du dernier 
+déplacement. Ainsi, la relaxation d'une arête $(u, v)$ vérifie si le 
+déplacement de $u$ vers $v$ est autorisé étant donné $prev[u]$, via la 
+fonction \texttt{move\_valid} la distance effective entre $u$ et $v$ est desormais 1.
+
+\paragraph{Cas particulier du premier déplacement.} Lorsque \texttt{prev\_pos} 
+vaut \texttt{INVALID\_VERTEX} (début de partie, aucun déplacement précédent), 
+les sommets adjacents non murés et non occupés sont les seules accessibles à distance 1.
+
+\begin{algorithm}
+\caption{Dijkstra with directional state}
+\begin{algorithmic}[1]
+\Function{Dijkstra}{$graph, source, prev\_pos, op\_pos$}
+    \State $dist[v] \gets +\infty$ for all $v$; $dist[source] \gets 0$
+    \State $prev[source] \gets prev\_pos$
+    \State $visited[v] \gets \text{false}$ for all $v$
+    \For{$iter = 1$ \textbf{to} $n$}
+        \State $u \gets \arg\min_{v \notin visited} dist[v]$
+        \If{$u = \bot$} \textbf{break} \EndIf
+        \State $visited[u] \gets \text{true}$
+        \If{$prev[u] = \text{INVALID\_VERTEX}$}
+            \ForAll{neighbor $v$ of $u$ (not walled, not occupied)}
+                \State $dist[v] \gets 1$; $prev[v] \gets u$
+            \EndFor
+        \Else
+            \ForAll{vertex $v$ such that \texttt{move\_valid}$(u, v, prev[u], op\_pos)$}
+                \If{$dist[u] + 1 < dist[v]$}
+                    \State $dist[v] \gets dist[u] + 1$; $prev[v] \gets u$
+                \EndIf
+            \EndFor
+        \EndIf
+    \EndFor
+    \State \Return $dist$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{figure}[h]
+\centering
+% Figure : exemple sur un petit graphe triangulaire (m=3)
+% Montrer le joueur en position centrale, avec prev_pos au Nord.
+% Colorier les cases accessibles à distance 1 (rouge), 2 (orange), 3 (jaune)
+% selon les règles d'accélération directionnelle.
+% Faire apparaître un mur sur une arête pour illustrer le contournement.
+\caption{Distances calculées par Dijkstra depuis une position avec accélération}
+\end{figure}
+
+\noindent \textbf{Complexité.} L'algorithme implémenté utilise une recherche 
+linéaire du minimum, ce qui donne une complexité en $O(n^2)$ où $n$ est le 
+nombre de sommets. Une file de priorité 
+ramènerait cette complexité à $O((n + e) \log n)$, ce qui constitue une 
+piste d'amélioration identifiée.
+
+\subsubsection{Reconstruction et exploitation du chemin optimal}
+
+Une fois les distances calculées, Foenem reconstruit le chemin complet 
+depuis sa position jusqu'à l'objectif via le tableau \texttt{prev}, puis 
+extrait le \textbf{premier sommet du chemin} comme prochain coup à jouer.
+
+\paragraph{Optimisation par accélération.} Le chemin reconstruit contient 
+les sommets intermédiaires. Foenem identifie le \textbf{sommet le plus loin 
+atteignable en un seul coup} (i.e. de distance 1 dans le graphe Dijkstra) 
+et le joue directement, tirant parti des déplacements accélérés.
+
+\begin{figure}[h]
+\centering
+% Figure : chemin reconstruit source -> A -> B -> C -> objectif
+% Mettre en évidence que si dist[C]=1 (distance Dijkstra), 
+% le joueur joue directement C en un seul coup (saut accéléré),
+% au lieu de jouer A, puis B, puis C en trois tours.
+\caption{Exploitation de l'accélération lors de la reconstruction de chemin}
+\end{figure}
+
+\subsubsection{Évaluation et placement des murs}
+
+Foenem génère des candidats de placement de mur autour de deux sommets clés: 
+la \textbf{position de l'adversaire} et son \textbf{prochain objectif}. Pour 
+chaque sommet, les paires d'arêtes consécutives valides constituent les 
+candidats (conformément aux règles : un mur couvre deux arêtes adjacentes 
+issues d'un même sommet).
+
+\begin{figure}[h]
+\centering
+% Figure : sommet u avec 4 arêtes valides vers v1, v2, v3, v4
+% Montrer les 4 paires candidates : (u,v1)+(u,v2), (u,v2)+(u,v3), etc.
+% Barrer les paires impliquant des arêtes inexistantes ou déjà murées
+\caption{Génération des murs candidats autour d'un sommet}
+\end{figure}
+
+\subsubsubsection{Évaluation du gain}
+
+Pour chaque candidat, Foenem évalue le \textbf{gain} obtenu : l'augmentation 
+de la distance de l'adversaire à son objectif après pose du mur. L'évaluation 
+se fait celon l'algorithm suivant :
+
+\begin{algorithm}
+\caption{Evaluation of a candidate wall gain}
+\begin{algorithmic}[1]
+\Function{evaluate\_wall\_gain}{$graph, wall, pos, opp\_pos, opp\_prev, opp\_obj, d_0$}
+    \State Temporarily place $wall$ in $graph$
+    \State $dist \gets$ \Call{Dijkstra}{$graph, opp\_pos, opp\_prev, pos$}
+    \State $d_1 \gets dist[opp\_obj]$
+    \State Remove $wall$ from $graph$
+    \If{$d_1 = +\infty$} \State \Return $0$ \EndIf
+    \State \Return $\max(0,\ d_1 - d_0)$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+Un mur qui rendrait l'objectif inaccessible (\texttt{dist = UINT\_MAX}) est 
+rejeté (coup \texttt{WATERLOO} côté serveur), et son gain est fixé à 0.
+
+Le mur n'est posé que si l'une des deux conditions suivantes est vérifiée:
+
+\begin{itemize}
+    \item Le gain est \textbf{supérieur ou égal à 2}
+    \item L'adversaire est à \textbf{distance inférieure ou égale à 2} 
+    de son objectif 
+\end{itemize}
+
+\noindent Ces seuils ont été choisis empiriquement pour éviter de \textbf{gaspiller} 
+des murs sur des gains marginaux, tout en réagissant aux situations critiques.
+
+\subsection{Stratégie Tourist}
+
+\subsubsection{Vue d'ensemble}
+
+\textbf{Tourist} est une évolution directe de la stratégie Foenem, dont elle 
+conserve l'architecture générale tout en y apportant plusieurs améliorations 
+ciblées. L'objectif reste identique : combiner \textbf{progression optimale vers 
+les objectifs} et \textbf{blocage stratégique de l'adversaire} par placement de 
+murs. La difference principale avec Foenem réside dans la manière de planifier 
+le parcours des objectifs : Tourist formule ce problème comme une instance du 
+\textbf{problème du voyageur de commerce} (TSP pour travelling salesman problem) et y apporte une solution gloutonne.
+
+\subsubsection{Planification du parcours : du recalcul local au chemin global}
+
+\paragraph{Approche de Foenem : recalcul myope à chaque tour.}
+À chaque tour, Foenem lance un Dijkstra depuis sa position courante, évalue 
+la distance à chaque objectif non encore atteint, et se dirige vers le plus 
+proche. Cette approche est optimale 
+pour le prochain objectif, mais ne garantit pas un ordre de visite global 
+efficace. En particulier, elle peut conduire à des \textbf{allers-retours} 
+coûteux lorsque les objectifs sont disposés de manière non convexe sur le graphe.
+
+\paragraph{Formulation TSP dans Tourist.}
+Tourist modélise explicitement le problème : étant donné la position courante 
+du joueur et l'ensemble des objectifs non encore atteints, il s'agit de trouver 
+un \textbf{ordre de visite de tous les objectifs minimisant la distance totale 
+parcourue}, avant de revenir à la case de départ. Ce problème est une instance 
+du TSP, qui est NP-difficile dans le cas général. Tourist y répond par une 
+\textbf{heuristique gloutonne du plus proche voisin}.
+
+\paragraph{Algorithme glouton du plus proche voisin (\texttt{global\_glouton}).}
+L'algorithme procède de la manière suivante :
+
+\begin{enumerate}
+    \item Depuis la position courante, un BFS est lancé pour calculer les 
+    distances à tous les sommets du graphe.
+    \item L'objectif non encore atteint le plus proche (au sens de la distance 
+    BFS) est sélectionné comme prochaine destination.
+    \item Le chemin vers cet objectif est reconstruit via le tableau 
+    \texttt{parent} et stocké dans \texttt{path->paths[i]}.
+    \item La source est mise à jour à l'objectif atteint, et l'étape 1 est 
+    répétée jusqu'à épuisement des objectifs, puis pour le retour à la case 
+    de départ.
+\end{enumerate}
+
+\begin{algorithm}
+\caption{Global greedy path computation (tourist)}
+\begin{algorithmic}[1]
+\Function{global\_greedy}{$players\_state, path$}
+    \State $source \gets players\_state.pos$
+    \State $is\_reached \gets$ copy of $players\_state.is\_objective\_reached$
+    \For{$i = 0$ \textbf{to} $num\_objectives\_to\_reach$}
+        \State $dist, parent \gets$ \Call{BFS}{$graph, source$}
+        \State $obj \gets \arg\min_{o_j \text{ not reached}} dist[o_j]$
+        \Comment{closest neighbor}
+        \State Store path $source \to obj$ via $parent$ in $path.paths[i]$
+        \State Mark $obj$ as reached ; $source \gets obj$
+    \EndFor
+    \State \textit{// last segment: return to start position}
+    \State $dist, parent \gets$ \Call{BFS}{$graph, source$}
+    \State Store path $source \to start$ in $path.paths[num\_objectives]$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\noindent Ce chemin global est calculé \textbf{une seule fois} en début de 
+partie (ou après un WATERLOO), puis suivi pas à pas via \texttt{go\_throught\_path}.
+Il n'est recalculé en cours de jeu que lorsque l'adversaire bloque physiquement 
+le chemin prévu, déclenchant un saut (\texttt{JUMP}) et une replannification immédiate.
+
+\paragraph{Remplacement de Dijkstra par BFS.}
+Un second changement algorithmique notable est le remplacement du Dijkstra 
+de Foenem par un \textbf{BFS enrichi}. Ce choix est justifié par le fait que 
+toutes les arêtes non murées ont un poids identique : dans ce cas, BFS est 
+suffisant et plus simple à implémenter. Tourist intègre néanmoins les 
+\textbf{règles d'accélération directionnelles} directement dans le BFS via 
+la fonction \texttt{queue\_deep}, qui étend la frontière de recherche au-delà 
+du voisin immédiat lorsque le déplacement est en ligne droite 
+(\texttt{MAX\_DIST\_STRAIGHT}) ou à 60 degrés (\texttt{MAX\_DIST\_60}).
+
+\begin{figure}[h]
+\centering
+% Figure : comparaison des deux stratégies de planification
+% Foenem : à chaque tour T, Dijkstra -> objectif le plus proche (horizon 1)
+%   -> possible aller-retour si objectifs mal disposés
+% Tourist : une fois, global_glouton -> ordre A -> B -> C -> départ
+%   -> suivi du chemin complet, replannification uniquement sur WATERLOO
+\caption{Planification myope (Foenem) vs.\ chemin global glouton (Tourist)}
+\end{figure}
+
+
+\subsubsection{Stratégie de murs dans Tourist}
+
+Tourist conserve la logique de placement de murs de Foenem (génération de 
+candidats, évaluation du gain par BFS temporaire, seuil \texttt{WALL\_DIFF}), 
+avec deux adaptations. D'une part, le BFS remplace Dijkstra pour l'évaluation 
+du gain. D'autre part, Tourist sélectionne les murs candidats \textbf{directement 
+sur le chemin BFS de l'adversaire} : plutôt que de générer toutes les paires 
+d'arêtes autour de la position et de l'objectif adverses, Tourist parcourt le 
+chemin optimal de l'adversaire et teste, pour chaque arête de ce chemin, 
+la paire de murs la plus perturbatrice (gain > 3).
+
+\subsubsection{Gestion robuste des coups WATERLOO}
+
+Tourist distingue deux cas lors de la réception d'un WATERLOO :
+
+\begin{itemize}
+    \item Si le coup précédent était un \textbf{déplacement} 
+    (\texttt{prev\_move.t != WALL}), cela signale qu'un mur adverse inconnu 
+    bloquait la route. Tourist remet à jour sa position réelle, réinitialise 
+    \texttt{prev\_dir} à \texttt{NO\_EDGE} et relance \texttt{global\_glouton}.
+    \item Si le coup précédent était une \textbf{pose de mur}, le WATERLOO 
+    signale un placement invalide. Tourist retire ce mur de son graphe local 
+    via \texttt{remove\_wall} avant d'intégrer le mur révélé par le serveur 
+    (\texttt{build\_wall}), évitant ainsi une corruption persistante de 
+    \texttt{p\_graph}.
+\end{itemize}
+
+\noindent Dans Foenem, seul le premier cas était géré explicitement. Le second 
+--- la correction d'un mur posé invalide --- constituait une source potentielle 
+d'incohérence de l'état interne, corrigée dans Tourist.
+
+
+
+
+\section{Analyse de la couverture de tests}
+\label{sec:resultats}
+\subsubsection{Vue d'ensemble}
+
+La couverture globale du projet atteint \textbf{36,87\% des lignes}, ce qui 
+reflète une stratégie de tests ciblée sur les composants bas niveau plutôt 
+qu'une couverture exhaustive de l'ensemble du code. Le tableau suivant 
+récapitule la couverture par fichier.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|r|r|}
+\hline
+\textbf{Fichier} & \textbf{Lignes} & \textbf{Couverture} \\
+\hline
+\texttt{src/graph\_impl.c}   & 118 & 61,02\% \\
+\texttt{src/move\_valid.c}   &  78 & 89,74\% \\
+\texttt{src/waterloo.c}      &  92 & 93,48\% \\
+\hline
+\texttt{test/test\_move\_valid.c} & 60 & 100,00\% \\
+\texttt{test/test\_waterloo.c}    & 46 & 100,00\% \\
+\hline
+\textbf{Total}               & 906 & \textbf{88,84\%} \\
+\hline
+\end{tabular}
+\caption{Couverture de tests par fichier (gcov)}
+\end{table}
+
+
+Les deux fichiers de tests unitaires atteignent \textbf{100\% de couverture}, 
+ce qui confirme qu'ils sont effectivement exécutés et que leurs cas de test 
+sont exhaustifs par rapport aux chemins de code qu'ils ciblent.
+
+\paragraph{\texttt{waterloo.c} --- 93,48\%.}
+La logique de détection et de traitement des coups invalides est quasi 
+intégralement couverte. Les quelques lignes non atteintes (6,52\%) 
+correspondent vraisemblablement à des gardes défensives ou à des branches 
+d'erreur difficiles à provoquer en conditions de test normales, telles que 
+des arêtes \texttt{INVALID\_EDGE} ou des états incohérents du graphe.
+
+\paragraph{\texttt{move\_valid.c} --- 89,74\%.}
+La fonction de validation des déplacements, qui encode les règles 
+d'accélération directionnelle, est bien couverte. Les 10\% restants 
+correspondent probablement à des combinaisons de directions peu fréquentes 
+ou à des cas limites impliquant \texttt{INVALID\_VERTEX} en cours de partie.
+
+\paragraph{\texttt{graph\_impl.c} --- 61,02\%.}
+La couverture partielle de ce fichier indique que les fonctions utilitaires 
+du graphe (construction, accès aux arêtes, gestion des murs) sont testées 
+via les tests de \texttt{waterloo} et \texttt{move\_valid}, mais que certaines 
+fonctions --- probablement liées à l'initialisation ou à des cas de graphes 
+particuliers --- ne sont pas directement exercées par les tests existants.
+
+\paragraph{Server}
+Les autres fichiers ont bien été testé par le server en visualisant differente partie.
+
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+
+
+\begin{thebibliography}{9}
+\bibliographystyle{plain}
+\bibitem{quoridor_wiki}
+  Wikipédia,
+  \textit{Quoridor},
+  \url{https://en.wikipedia.org/wiki/Quoridor}
+
+\bibitem{gsl}
+  GNU Scientific Library,
+  \textit{Documentation officielle},
+  \url{https://www.gnu.org/software/gsl/doc/html/index.html}
+
+\end{thebibliography}
+
+\end{document}</content>
+<parameter name="filePath">/root/Corsidor/rapport.tex
