@@ -1,5 +1,5 @@
-GSL_PATH ?= gsl
-DOT ?= graphviz/bin/dot
+#GSL_PATH ?= $(HOME)/corsidor-S6/gsl
+#DOT ?= $(HOME)/corsidor-S6/graphviz/bin/dot
 
 CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include -I./src
 LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
@@ -21,13 +21,7 @@ client: $(CLIENTS)
 tourist.so: src/player_tourist.o src/tourist.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
-zzztourist.so: src/player_tourist.o src/tourist.o
-	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
-
-foenem.so: src/graph_impl.o src/player_foenem.o src/move_valid.o
-	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
-
-zscarecrow.so: src/player_scarecrow.o
+scarecrow.so: src/player_scarecrow.o
 	$(CC) $(CFLAGS) -shared $^ -o $@ $(LDFLAGS)
 
 dot_test: test_graph_impl
