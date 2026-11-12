@@ -153,8 +153,8 @@ Two board shapes are supported:
 
 | Client | Source | Description |
 |--------|--------|--------------|
-| `tourist.so` / `zzztourist.so` | `src/tourist.c`, `src/player_tourist.c/h` | Pathfinding-oriented strategy, tracks its own and the opponent's position/path |
-| `zscarecrow.so` | `src/player_scarecrow.c` | Simpler heuristic-based strategy |
+| `tourist.so` | `src/tourist.c`, `src/player_tourist.c/h` | Pathfinding-oriented strategy, tracks its own and the opponent's position/path |
+| `scarecrow.so` | `src/player_scarecrow.c` | Simpler heuristic-based strategy |
 
 The set of clients built by `make client` is defined by the `CLIENTS` variable in the
 `Makefile`.
