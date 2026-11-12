@@ -1,7 +1,5 @@
-GSL_PATH ?= /net/ens/renault/save/gsl-2.6/install
-#GSL_PATH ?= $(HOME)/corsidor-S6/gsl
-DOT ?= dot
-#DOT ?= $(HOME)/corsidor-S6/graphviz/bin/dot
+GSL_PATH ?= gsl
+DOT ?= graphviz/bin/dot
 
 CFLAGS = -std=c99 -Wall -Wextra -fPIC -g3 --coverage -I$(GSL_PATH)/include -I./src
 LDFLAGS = -lm -lgsl -lgslcblas -ldl --coverage \
